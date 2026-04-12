@@ -21,12 +21,23 @@ loginRouter.post('/', async (req: Request, res: Response): Promise<any> => {
             return res.status(401).json({ erro: 'E-mail ou senha incorretos.' });
         }
 
+        // --- NOVO: BUSCA O NOME DO USUÁRIO NA TABELA ---
+        const { data: usuarioDb } = await supabase
+            .from('usuarios')
+            .select('nome_usuario')
+            .eq('id', data.user.id)
+            .single();
+
         return res.status(200).json({
             mensagem: 'Login realizado com sucesso',
             token: data.session.access_token,        
             refreshToken: data.session.refresh_token, 
             expiresIn: data.session.expires_in,  
-            usuario: data.user
+            usuario: {
+                id: data.user.id,
+                nome: usuarioDb?.nome_usuario || 'Usuário Bento Box', // Pega o nome do banco
+                email: data.user.email
+            }
         });
 
     } catch (err) {

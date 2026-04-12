@@ -60,6 +60,18 @@ export default class ExibirReceita extends Component<Props> {
 
                             <View style={styles.conteudo}>
                                 <Text style={styles.titulo}>{receita.nome}</Text>
+                                
+                                {/* ===== NOVO BLOCO ADICIONADO ===== */}
+                                {receita.autorNome && (
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, marginTop: -5 }}>
+                                        <AntDesign name="user" size={14} color="#FF9D4D" style={{ marginRight: 5 }} />
+                                        <Text style={{ fontSize: 14, color: '#FF9D4D', fontWeight: 'bold' }}>
+                                            Por: {receita.autorNome}
+                                        </Text>
+                                    </View>
+                                )}
+                                {/* ================================= */}
+
                                 <Text style={styles.descricao}>{receita.descricao || "Sem descrição disponível."}</Text>
 
                                 <View style={styles.infoRow}>

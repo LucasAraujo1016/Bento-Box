@@ -24,12 +24,12 @@ export default function FooterCustomizado() {
               <Entypo name="calendar" size={35} color="black" />
             </Pressable>
         </Link>
-        <Link href="../home" asChild>
+        <Link href="../historico" asChild>
             <Pressable>
               <AntDesign name="history" size={35} color="black" />
             </Pressable>
         </Link>
-        <Link href="../home" asChild>
+        <Link href="../favoritos" asChild>
             <Pressable>
               <Feather name="heart" size={35} color="black" />
             </Pressable>

@@ -1,13 +1,15 @@
 import { Component } from "react";
-import { View, ScrollView, Text, Pressable, TextInput } from "react-native";
+import { View, ScrollView, Text, Pressable, TextInput, Alert } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage'; // <-- Importação adicionada
+
 import HeaderCustomizado from "./components/header";
 import FooterCustomizado from "./components/footer";
-import NovaReceita from "./components/novaReceita"; 
+import NovaReceita from "./components/receitas/novaReceita"; 
 import AntDesign from '@expo/vector-icons/AntDesign';
 import EvilIcons from '@expo/vector-icons/EvilIcons';
 import style from "./styleSheet";
-import ReceitaCard, { ReceitaItem } from "./components/receitaCard";
-import ExibirReceita from "./components/exibirReceita";
+import ReceitaCard, { ReceitaItem } from "./components/receitas/receitaCard";
+import ExibirReceita from "./components/receitas/exibirReceita";
 
 interface State {
     modalVisivel: boolean;
@@ -22,6 +24,8 @@ interface State {
     idsHistorico: string[];
     receitasOriginais: ReceitaItem[];
     receitasEmbaralhadas: ReceitaItem[];
+    usuarioId: string;
+    usuarioNome: string; // <-- ADICIONE AQUI
 }
 
 export default class Receitas extends Component<any, State> {
@@ -38,35 +42,70 @@ export default class Receitas extends Component<any, State> {
         idsHistorico: [],
         receitasOriginais: [],
         receitasEmbaralhadas: [],
+        usuarioId: "",
+        usuarioNome: "", // <-- INICIALIZE AQUI
     };
 
-    componentDidMount() {
-        this.buscarReceitasDoBanco();
+    // --- AGORA É ASSÍNCRONO PARA PEGAR DA MEMÓRIA ---
+    async componentDidMount() {
+        const uid = await AsyncStorage.getItem('usuarioId');
+        const nome = await AsyncStorage.getItem('usuarioNome') || "Chefe Anônimo"; // <-- RECUPERA O NOME
+        
+        if (uid) {
+            this.setState({ usuarioId: uid, usuarioNome: nome }, () => {
+                this.buscarReceitasDoBanco();
+                this.buscarHistoricoDoBanco(); 
+                this.buscarFavoritosDoBanco();
+            });
+        } else {
+            Alert.alert("Erro", "Sessão expirada. Faça login novamente.");
+        }
     }
 
     buscarReceitasDoBanco = async () => {
         try {
-            // Faz a requisição para a rota GET que acabamos de criar
             const resposta = await fetch('http://localhost:3000/api/receitas');
-            
             if (resposta.ok) {
                 const dadosBanco = await resposta.json();
-                
-                // Atualiza o estado com os dados que vieram do MongoDB
                 this.setState({ receitasOriginais: dadosBanco }, () => {
-                    this.embaralharReceitas(); // Mantém a visualização embaralhada
+                    this.embaralharReceitas();
                 });
-            } else {
-                console.error("Falha ao buscar as receitas, status:", resposta.status);
             }
         } catch (error) {
             console.error("Erro de conexão ao buscar receitas:", error);
         }
     }
 
+    buscarFavoritosDoBanco = async () => {
+        try {
+            // Usa o ID real vindo do State
+            const resposta = await fetch(`http://localhost:3000/api/favoritos/${this.state.usuarioId}`);
+            if (resposta.ok) {
+                const dados = await resposta.json();
+                const ids = dados.map((item: any) => item._id || item.id).filter((id: any) => id !== undefined);
+                this.setState({ idsFavoritos: ids });
+            }
+        } catch (error) {
+            console.error("Erro ao buscar favoritos:", error);
+        }
+    }
+
+    buscarHistoricoDoBanco = async () => {
+        try {
+            // Usa o ID real vindo do State
+            const resposta = await fetch(`http://localhost:3000/api/historico/${this.state.usuarioId}`);
+            if (resposta.ok) {
+                const dados = await resposta.json();
+                const ids = dados.map((item: any) => item._id || item.id).filter((id: any) => id !== undefined);
+                this.setState({ idsHistorico: ids });
+            }
+        } catch (error) {
+            console.error("Erro de conexão ao buscar histórico:", error);
+        }
+    }
+
     embaralharReceitas = () => {
         const copiadas = [...this.state.receitasOriginais];
-        // Algoritmo simples de embaralhar (Sort random)
         const embaralhadas = copiadas.sort(() => Math.random() - 0.5);
         this.setState({ receitasEmbaralhadas: embaralhadas });
     }
@@ -95,46 +134,28 @@ export default class Receitas extends Component<any, State> {
         });
     }
 
-    // Aplica as regras de filtragem na lista
     obterReceitasFiltradas = () => {
         const { receitasEmbaralhadas, termoPesquisa, filtroHabilidade, filtroCulinaria, filtroRestricoes } = this.state;
-        
         let resultado = receitasEmbaralhadas;
 
-        // 1. Filtro por Texto na Barra de Busca (Nome)
         if (termoPesquisa.trim() !== '') {
             const termo = termoPesquisa.toLowerCase();
             resultado = resultado.filter(receita => receita.nome.toLowerCase().includes(termo));
         }
 
-        // 2. Filtros Exatos de Categoria e Nível
         if (filtroHabilidade.length > 0) {
-            // Converte "Intermediário" para "intermediario", e os outros para letras minúsculas
-            const valoresHabilidade = filtroHabilidade.map(f => 
-                f === "Intermediário" ? "intermediario" : f.toLowerCase()
-            );
-            
-            // Garantir que a leitura suporte até as receitas salvas sem estar minúsculas acidentalmente (?.toLowerCase())
-            resultado = resultado.filter(receita => 
-                receita.nivelHabilidade && valoresHabilidade.includes(receita.nivelHabilidade.toLowerCase())
-            );
+            const valoresHabilidade = filtroHabilidade.map(f => f === "Intermediário" ? "intermediario" : f.toLowerCase());
+            resultado = resultado.filter(receita => receita.nivelHabilidade && valoresHabilidade.includes(receita.nivelHabilidade.toLowerCase()));
         }
         
         if (filtroCulinaria.length > 0) {
-            // Converte para letras minúsculas (ex: "Brasileira" -> "brasileira")
             const valoresCulinaria = filtroCulinaria.map(f => f.toLowerCase());
-            
-            resultado = resultado.filter(receita => 
-                receita.tipoCulinaria && valoresCulinaria.includes(receita.tipoCulinaria.toLowerCase())
-            );
+            resultado = resultado.filter(receita => receita.tipoCulinaria && valoresCulinaria.includes(receita.tipoCulinaria.toLowerCase()));
         }
 
-        // 3. Filtros (Restrições)
-        // Lógica de "E" (AND): A receita precisa ter TODAS as restrições selecionadas.
         if (filtroRestricoes.length > 0) {
             resultado = resultado.filter(receita => {
                 const restricoesReceita = receita.restricoes || [];
-                // Retorna true APENAS se a receita possuir TODAS as restrições marcadas no filtro
                 return filtroRestricoes.every(restricaoSelecionada => restricoesReceita.includes(restricaoSelecionada));
             });
         }
@@ -142,7 +163,6 @@ export default class Receitas extends Component<any, State> {
         return resultado;
     }
 
-    // Ação ao clicar em um Card
     abrirReceitaDetalhes = (receita: ReceitaItem) => {
         this.setState({ receitaSelecionada: receita, modalExibirVisivel: true });
     }
@@ -151,10 +171,9 @@ export default class Receitas extends Component<any, State> {
         this.setState({ modalExibirVisivel: false, receitaSelecionada: null });
     }
 
-    toggleFavorito = (receita: ReceitaItem) => {
-        // Usa '_id' se vier do Mongo, senão usa 'id' do mock
+    toggleFavorito = async (receita: ReceitaItem) => {
         const id = receita._id || receita.id;
-        if(!id) return;
+        if (!id) return;
 
         this.setState(prev => {
             const jaFavorito = prev.idsFavoritos.includes(id);
@@ -164,22 +183,48 @@ export default class Receitas extends Component<any, State> {
                 return { idsFavoritos: [...prev.idsFavoritos, id] };
             }
         });
+
+        try {
+            // Usa o ID real vindo do State
+            await fetch('http://localhost:3000/api/favoritos/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    usuarioId: this.state.usuarioId,
+                    receitaId: id
+                })
+            });
+        } catch (error) {
+            Alert.alert("Erro", "Falha ao registrar favorito.");
+        }
     }
 
-    marcarReceitaFeita = (receita: ReceitaItem) => {
+    marcarReceitaFeita = async (receita: ReceitaItem) => {
         const id = receita._id || receita.id;
-        if(!id) return;
+        if (!id) return;
 
         this.setState(prev => {
             const jaFeita = prev.idsHistorico.includes(id);
             if (jaFeita) {
-                // Se já estiver marcada, remove o id da lista (desmarca)
                 return { idsHistorico: prev.idsHistorico.filter(item => item !== id) };
             } else {
-                // Se não estiver, adiciona o id à lista (marca)
                 return { idsHistorico: [...prev.idsHistorico, id] };
             }
         });
+
+        try {
+            // Usa o ID real vindo do State
+            await fetch('http://localhost:3000/api/historico/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    usuarioId: this.state.usuarioId, 
+                    receitaId: id 
+                })
+            });
+        } catch (error) {
+            console.error("Erro ao salvar no histórico", error);
+        }
     }
 
     render() {
@@ -270,18 +315,13 @@ export default class Receitas extends Component<any, State> {
                     )}
                 </View>
                 
-                {/* --- CONTEÚDO PRINCIPAL (COM GRID) --- */}
                 <ScrollView contentContainerStyle={{flexGrow: 1, padding: 20}}>
-                    
-                    {/* Botão de Criação ocupa 1 linha inteira no topo */}
                     <Pressable style={[style.nova_receita, {marginBottom: 20, backgroundColor: '#FF9D4D', alignSelf: 'center'}]} onPress={this.abrirModal}>
                         <AntDesign name="plus-circle" size={24} color="white" />                           
                         <Text style={{fontSize: 16, fontWeight: 'bold', color: 'white', marginLeft: 8}}>Criar Nova Receita</Text>
                     </Pressable>
 
-                    {/* MURAL EM GRID (flex-wrap e space-between) */}
                     <View style={{flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', width: '100%'}}>
-                        
                         {listaExibicao.map((receita) => (
                             <ReceitaCard 
                                 key={receita._id || receita.id || Math.random().toString()} 
@@ -295,13 +335,14 @@ export default class Receitas extends Component<any, State> {
                                 <Text style={{color: '#999', fontSize: 16}}>Nenhuma receita encontrada para estes filtros.</Text>
                             </View>
                         )}
-                        
                     </View>
                 </ScrollView>
                 
                 <NovaReceita 
                     visible={this.state.modalVisivel} 
                     onClose={this.fecharModal} 
+                    autorId={this.state.usuarioId}     
+                    autorNome={this.state.usuarioNome} 
                 />
 
                 <ExibirReceita

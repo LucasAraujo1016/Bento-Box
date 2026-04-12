@@ -2,7 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import cadastroRouter from './cadastro';
 import loginRouter from './login';
-import receitasRouter from './receitasRouter';
+import receitasRouter from './receitas/receitasRouter';
+import dicasRouter from './dicas/dicasRouter';
+import historicoRouter from './historico/historicoRouter'
+import favoritosRouter from './favoritos/favoritosRouter'
 
 import supabase from './database/supabaseClient';
 import { connectToMongoDB } from './database/mongodb';
@@ -14,6 +17,9 @@ app.use(express.json());
 app.use('/api/cadastro', cadastroRouter);
 app.use('/api/login', loginRouter);
 app.use('/api/receitas', receitasRouter);
+app.use('/api/dicas', dicasRouter);
+app.use('/api/historico', historicoRouter);
+app.use('/api/favoritos', favoritosRouter);
 
 const PORT = process.env.PORT || 3000;
 

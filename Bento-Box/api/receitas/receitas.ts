@@ -7,7 +7,7 @@ const IngredienteSchema = new mongoose.Schema({
 
 const ReceitaSchema = new mongoose.Schema({
   autorId: { type: String, required: true, index: true }, 
-
+  autorNome: { type: String }, // <-- NOVO CAMPO ADICIONADO
   nome: { type: String, required: true },
   imagem: { type: String },
   descricao: { type: String, required: true },

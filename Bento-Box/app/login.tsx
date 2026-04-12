@@ -2,7 +2,7 @@ import { Component } from "react";
 import { Image, Pressable, Text, TextInput, View, Alert } from "react-native";
 import style from "./styleSheet";
 import { Link, router } from "expo-router";
-import Constants from 'expo-constants'
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default class Login extends Component {
     state = {
@@ -41,6 +41,9 @@ export default class Login extends Component {
 
             if (resposta.ok) {
                 console.log("Token recebido:", dados.token);
+                // SALVA O ID E O NOME DO USUÁRIO LOGADO NO CELULAR
+                await AsyncStorage.setItem('usuarioId', dados.usuario.id);
+                await AsyncStorage.setItem('usuarioNome', dados.usuario.nome);
                 router.replace('/home'); 
             } else {
                 Alert.alert("Erro no Login", dados.erro || "Verifique suas credenciais");

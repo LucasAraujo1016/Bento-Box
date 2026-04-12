@@ -2,15 +2,17 @@ import React from 'react';
 import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
 
 export interface ReceitaItem {
-    id: string | undefined;
-    _id?: string; // ID do MongoDB
+    _id?: string;
+    id?: string;
+    autorId: string;
+    autorNome?: string; // <--- ADICIONE ESTA LINHA
     nome: string;
-    imagem: string;
-    descricao?: string;
-    tempoPreparo?: number;
+    imagem?: string;
+    descricao: string;
+    tempoPreparo: number;
     nivelHabilidade: string;
     tipoCulinaria: string;
-    restricoes: string[];
+    restricoes?: string[];
     ingredientes?: { nome: string; quantidade: string }[];
     modoPreparo?: string[];
 }

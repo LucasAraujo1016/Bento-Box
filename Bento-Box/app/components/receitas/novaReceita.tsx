@@ -3,11 +3,13 @@ import { View, ScrollView, Text, TextInput, Pressable, Modal, Image, Alert } fro
 import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
 import AntDesign from '@expo/vector-icons/AntDesign';
-import style from "../styleSheet";
+import style from "../../styleSheet";
 
 interface Props {
     visible: boolean;
     onClose: () => void;
+    autorId: string;   // <-- ADICIONADO
+    autorNome: string; // <-- ADICIONADO
 }
 
 interface State {
@@ -291,7 +293,8 @@ export default class NovaReceita extends Component<Props, State> {
         });
 
         const receitaNova = {
-            autorId: "usuario-temporario-123", 
+            autorId: this.props.autorId,       // PEGA DINÂMICO
+            autorNome: this.props.autorNome,   // PEGA DINÂMICO
             nome: this.state.nome.trim(),
             imagem: this.state.imagem || "",
             descricao: this.state.descricao.trim(),
