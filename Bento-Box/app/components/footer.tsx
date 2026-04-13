@@ -4,7 +4,7 @@ import style from '../styleSheet';
 import { Link } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Feather from '@expo/vector-icons/Feather';
-import Entypo from '@expo/vector-icons/Entypo';
+// import Entypo from '@expo/vector-icons/Entypo';
 
 export default function FooterCustomizado() {
   return (

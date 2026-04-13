@@ -9,6 +9,7 @@ const style = StyleSheet.create ({
         gap: 10,
         justifyContent: 'center',
         alignItems: 'center',
+        position: 'relative'
     },
 
     footer: {
@@ -280,6 +281,13 @@ const style = StyleSheet.create ({
         fontSize: 14, 
         color: '#888', 
         textAlign: 'center' 
+    },
+
+    btnLogout: {
+        position: 'absolute',
+        bottom: 10,
+        right: 15,
+        padding: 5
     }
 })
 
