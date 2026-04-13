@@ -19,11 +19,11 @@ export default function FooterCustomizado() {
               <Feather name="book-open" size={35} color="black" />
             </Pressable>
         </Link>
-        <Link href="../home" asChild>
+        {/* <Link href="../home" asChild>
             <Pressable>
               <Entypo name="calendar" size={35} color="black" />
             </Pressable>
-        </Link>
+        </Link> */}
         <Link href="../historico" asChild>
             <Pressable>
               <AntDesign name="history" size={35} color="black" />

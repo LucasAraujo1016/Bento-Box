@@ -1,12 +1,14 @@
 import React, { Component } from 'react';
-import { View, ScrollView, Text, ActivityIndicator, StyleSheet, Alert } from 'react-native';
-import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
+import { View, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import HeaderCustomizado from './components/header';
 import FooterCustomizado from './components/footer';
 import ReceitaCard, { ReceitaItem } from './components/receitas/receitaCard';
 import ExibirReceita from './components/receitas/exibirReceita';
+import CabecalhoSecao from './components/cabecalhoSecao';
+import EstadoVazio from './components/estadoVazio';
+import style from './styleSheet';
 
 interface State {
     favoritosReceitas: ReceitaItem[];
@@ -60,7 +62,6 @@ export default class Favoritos extends Component<any, State> {
         }
     };
 
-    // Pega o histórico para que os corações E as marcações de 'feita' fiquem certas nesta tela
     buscarHistoricoDoBanco = async () => {
         try {
             const resposta = await fetch(`http://localhost:3000/api/historico/${this.state.usuarioId}`);
@@ -80,7 +81,6 @@ export default class Favoritos extends Component<any, State> {
         this.buscarFavoritos();
     };
 
-    // Comunica com o backend de Favoritos
     toggleFavorito = async (receita: ReceitaItem) => {
         const id = receita._id || receita.id;
         if (!id) return;
@@ -92,12 +92,11 @@ export default class Favoritos extends Component<any, State> {
                 body: JSON.stringify({ usuarioId: this.state.usuarioId, receitaId: id })
             });
             this.buscarFavoritos(); 
-        } catch (error) {
+        } catch {
             Alert.alert("Erro", "Falha ao favoritar.");
         }
     };
 
-    // Comunica com o backend de Histórico (se ele marcar como feita aqui)
     marcarReceitaFeita = async (receita: ReceitaItem) => {
         const id = receita._id || receita.id;
         if (!id) return;
@@ -127,25 +126,24 @@ export default class Favoritos extends Component<any, State> {
 
                 <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 20 }}>
                     
-                    <View style={styles.headerInternoWrapper}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
-                            <FontAwesome5 name="heart" solid size={22} color="#E53935" style={{ marginRight: 10 }} />
-                            <Text style={styles.tituloSecao}>Meus Favoritos</Text>
-                        </View>
-                        <Text style={styles.subtituloSecao}>Suas receitas preferidas guardadas ({favoritosReceitas.length})</Text>
-                    </View>
+                    <CabecalhoSecao 
+                        titulo="Meus Favoritos"
+                        subtitulo={`Suas receitas preferidas guardadas (${favoritosReceitas.length})`}
+                        icone="heart"
+                        corIcone="#E53935"
+                    />
 
                     {carregando ? (
                         <View style={{ marginTop: 50 }}>
                             <ActivityIndicator size="large" color="#FF9D4D" />
                         </View>
                     ) : favoritosReceitas.length === 0 ? (
-                        <View style={styles.vazioContainer}>
-                            <Text style={styles.vazioTexto}>Você ainda não possui favoritos.</Text>
-                            <Text style={styles.vazioSubtexto}>Explore receitas e clique no coração para salvar suas preferidas!</Text>
-                        </View>
+                        <EstadoVazio 
+                            titulo="Você ainda não possui favoritos."
+                            subtitulo="Explore receitas e clique no coração para salvar suas preferidas!"
+                        />
                     ) : (
-                        <View style={styles.gridContainer}>
+                        <View style={style.gridContainer}>
                             {favoritosReceitas.map((receita) => (
                                 <ReceitaCard
                                     key={receita._id || receita.id || Math.random().toString()} 
@@ -172,51 +170,3 @@ export default class Favoritos extends Component<any, State> {
         );
     }
 }
-
-const styles = StyleSheet.create({
-    headerInternoWrapper: {
-        marginBottom: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(0,0,0,0.05)',
-        paddingBottom: 15,
-        alignItems: 'center',
-    },
-    tituloSecao: {
-        fontSize: 24, 
-        fontWeight: 'bold', 
-        color: '#333'
-    },
-    subtituloSecao: {
-        fontSize: 14, 
-        color: '#666', 
-        marginTop: 5
-    },
-    gridContainer: {
-        flexDirection: 'row', 
-        flexWrap: 'wrap', 
-        justifyContent: 'space-between', 
-        width: '100%'
-    },
-    vazioContainer: {
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        marginTop: 50,
-        backgroundColor: '#fff',
-        padding: 30,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#eee'
-    },
-    vazioTexto: {
-        fontSize: 18, 
-        fontWeight: 'bold', 
-        color: '#555', 
-        marginBottom: 5 
-    },
-    vazioSubtexto: {
-        fontSize: 14, 
-        color: '#888', 
-        textAlign: 'center',
-        paddingHorizontal: 20 
-    }
-});

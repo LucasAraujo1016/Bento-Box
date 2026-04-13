@@ -8,8 +8,8 @@ import style from "../../styleSheet";
 interface Props {
     visible: boolean;
     onClose: () => void;
-    autorId: string;   // <-- ADICIONADO
-    autorNome: string; // <-- ADICIONADO
+    autorId: string;
+    autorNome: string;
 }
 
 interface State {
@@ -293,8 +293,8 @@ export default class NovaReceita extends Component<Props, State> {
         });
 
         const receitaNova = {
-            autorId: this.props.autorId,       // PEGA DINÂMICO
-            autorNome: this.props.autorNome,   // PEGA DINÂMICO
+            autorId: this.props.autorId,
+            autorNome: this.props.autorNome,
             nome: this.state.nome.trim(),
             imagem: this.state.imagem || "",
             descricao: this.state.descricao.trim(),

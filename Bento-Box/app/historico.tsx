@@ -1,13 +1,13 @@
 import React, { Component } from 'react';
-import { View, ScrollView, Text, ActivityIndicator, StyleSheet, Alert } from 'react-native';
-import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
+import { View, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// Importação dos seus componentes padrão
 import HeaderCustomizado from './components/header';
 import FooterCustomizado from './components/footer';
 import ReceitaCard, { ReceitaItem } from './components/receitas/receitaCard';
 import ExibirReceita from './components/receitas/exibirReceita';
+import CabecalhoSecao from './components/cabecalhoSecao';
+import EstadoVazio from './components/estadoVazio';
+import style from "./styleSheet";
 
 interface State {
     historicoReceitas: ReceitaItem[];
@@ -26,12 +26,11 @@ export default class Historico extends Component<any, State> {
         receitaSelecionada: null,
         modalExibirVisivel: false,
         idsHistorico: [],
-        idsFavoritos: [], // Adicionado para evitar erro no modal
-        usuarioId: "", // ID dinâmico preenchido pelo AsyncStorage
+        idsFavoritos: [],
+        usuarioId: "",
     };
 
     async componentDidMount() {
-        // RECUPERA O USUÁRIO LOGADO ANTES DE BUSCAR AS COISAS
         const uid = await AsyncStorage.getItem('usuarioId');
         
         if (uid) {
@@ -47,13 +46,10 @@ export default class Historico extends Component<any, State> {
     buscarHistorico = async () => {
         this.setState({ carregando: true });
         try {
-            // Requisição usando this.state.usuarioId dinâmico
             const resposta = await fetch(`http://localhost:3000/api/historico/${this.state.usuarioId}`);
             
             if (resposta.ok) {
                 const dados: ReceitaItem[] = await resposta.json();
-                
-                // Extrair os IDs para manter coerência com o marcador "isFeita" do ExibirReceita
                 const ids = dados.map(item => item._id || item.id).filter(id => id !== undefined) as string[];
                 
                 this.setState({ 
@@ -72,7 +68,6 @@ export default class Historico extends Component<any, State> {
 
     buscarFavoritosDoBanco = async () => {
         try {
-            // Requisição usando this.state.usuarioId dinâmico
             const resposta = await fetch(`http://localhost:3000/api/favoritos/${this.state.usuarioId}`);
             if (resposta.ok) {
                 const dados = await resposta.json();
@@ -84,24 +79,20 @@ export default class Historico extends Component<any, State> {
         }
     };
 
-    // Gerenciamento do Modal de Detalhes
     abrirReceitaDetalhes = (receita: ReceitaItem) => {
         this.setState({ receitaSelecionada: receita, modalExibirVisivel: true });
     };
 
     fecharModalExibir = () => {
         this.setState({ modalExibirVisivel: false, receitaSelecionada: null });
-        // Recarrega o histórico e os favoritos caso o usuário os tenha alterado lá dentro
         this.buscarHistorico();
         this.buscarFavoritosDoBanco();
     };
 
-    // Ações de Botões no Modal
     toggleFavorito = async (receita: ReceitaItem) => {
         const id = receita._id || receita.id;
         if (!id) return;
 
-        // Atualização visual instantânea (Optimistic UI)
         this.setState(prev => {
             const jaFavorito = prev.idsFavoritos.includes(id);
             if (jaFavorito) {
@@ -111,7 +102,6 @@ export default class Historico extends Component<any, State> {
             }
         });
 
-        // Chamada para a API salvando no backend
         try {
             await fetch('http://localhost:3000/api/favoritos/toggle', {
                 method: 'POST',
@@ -121,7 +111,7 @@ export default class Historico extends Component<any, State> {
                     receitaId: id
                 })
             });
-        } catch (error) {
+        } catch {
             Alert.alert("Erro", "Falha ao registrar favorito.");
         }
     };
@@ -131,7 +121,6 @@ export default class Historico extends Component<any, State> {
         if (!id) return;
 
         try {
-            // Chamada para a API marcando/desmarcando a receita no backend
             await fetch('http://localhost:3000/api/historico/toggle', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -141,10 +130,9 @@ export default class Historico extends Component<any, State> {
                 })
             });
 
-            // Se o usuário clicar em desmarcar, nós já atualizamos a fonte da verdade chamando a busca
             this.buscarHistorico(); 
             
-        } catch (error) {
+        } catch {
             Alert.alert("Erro", "Falha ao registrar interação.");
         }
     };
@@ -158,25 +146,24 @@ export default class Historico extends Component<any, State> {
 
                 <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 20 }}>
                     
-                    <View style={styles.headerInternoWrapper}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5 }}>
-                            <FontAwesome5 name="scroll" size={22} color="#333" style={{ marginRight: 10 }} />
-                            <Text style={styles.tituloSecao}>Meu Histórico</Text>
-                        </View>
-                        <Text style={styles.subtituloSecao}>Receitas que você já preparou ({historicoReceitas.length})</Text>
-                    </View>
+                    <CabecalhoSecao 
+                        titulo="Meu Histórico" 
+                        subtitulo={`Receitas que você já preparou (${historicoReceitas.length})`} 
+                        icone="scroll" 
+                        corIcone="#333"
+                    />
 
                     {carregando ? (
                         <View style={{ marginTop: 50 }}>
                             <ActivityIndicator size="large" color="#FF9D4D" />
                         </View>
                     ) : historicoReceitas.length === 0 ? (
-                        <View style={styles.vazioContainer}>
-                            <Text style={styles.vazioTexto}>Nenhuma receita feita ainda.</Text>
-                            <Text style={styles.vazioSubtexto}>Que tal ir na aba de Receitas e começar a cozinhar?</Text>
-                        </View>
+                        <EstadoVazio 
+                            titulo="Nenhuma receita feita ainda."
+                            subtitulo="Que tal ir na aba de Receitas e começar a cozinhar?"
+                        />
                     ) : (
-                        <View style={styles.gridContainer}>
+                        <View style={style.gridContainer}>
                             {historicoReceitas.map((receita) => (
                                 <ReceitaCard
                                     key={receita._id || receita.id || Math.random().toString()} 
@@ -188,7 +175,6 @@ export default class Historico extends Component<any, State> {
                     )}
                 </ScrollView>
 
-                {/* Usa a mesma lógica padrão para injetar o Modal da receita na tela */}
                 <ExibirReceita
                     visible={modalExibirVisivel}
                     receita={receitaSelecionada}
@@ -204,50 +190,3 @@ export default class Historico extends Component<any, State> {
         );
     }
 }
-
-const styles = StyleSheet.create({
-    headerInternoWrapper: {
-        marginBottom: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(0,0,0,0.05)',
-        paddingBottom: 15,
-        alignItems: 'center', // CentralizaHorizontalmente o cabeçalho
-    },
-    tituloSecao: {
-        fontSize: 24, 
-        fontWeight: 'bold', 
-        color: '#333'
-    },
-    subtituloSecao: {
-        fontSize: 14, 
-        color: '#666', 
-        marginTop: 5
-    },
-    gridContainer: {
-        flexDirection: 'row', 
-        flexWrap: 'wrap', 
-        justifyContent: 'space-between', 
-        width: '100%'
-    },
-    vazioContainer: {
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        marginTop: 50,
-        backgroundColor: '#fff',
-        padding: 30,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#eee'
-    },
-    vazioTexto: {
-        fontSize: 18, 
-        fontWeight: 'bold', 
-        color: '#555', 
-        marginBottom: 5 
-    },
-    vazioSubtexto: {
-        fontSize: 14, 
-        color: '#888', 
-        textAlign: 'center' 
-    }
-});

@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import supabase from './database/supabaseClient'; // Ajuste o caminho se a pasta database estiver em outro local
+import supabase from './database/supabaseClient';
 
 const cadastroRouter = Router();
 

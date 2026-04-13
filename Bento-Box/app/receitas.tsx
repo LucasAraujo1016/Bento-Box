@@ -1,12 +1,12 @@
 import { Component } from "react";
-import { View, ScrollView, Text, Pressable, TextInput, Alert } from "react-native";
-import AsyncStorage from '@react-native-async-storage/async-storage'; // <-- Importação adicionada
+import { View, ScrollView, Text, Pressable, Alert } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage'; 
 
 import HeaderCustomizado from "./components/header";
 import FooterCustomizado from "./components/footer";
 import NovaReceita from "./components/receitas/novaReceita"; 
+import FiltrosReceita from "./components/receitas/filtrosReceita";
 import AntDesign from '@expo/vector-icons/AntDesign';
-import EvilIcons from '@expo/vector-icons/EvilIcons';
 import style from "./styleSheet";
 import ReceitaCard, { ReceitaItem } from "./components/receitas/receitaCard";
 import ExibirReceita from "./components/receitas/exibirReceita";
@@ -25,7 +25,7 @@ interface State {
     receitasOriginais: ReceitaItem[];
     receitasEmbaralhadas: ReceitaItem[];
     usuarioId: string;
-    usuarioNome: string; // <-- ADICIONE AQUI
+    usuarioNome: string;
 }
 
 export default class Receitas extends Component<any, State> {
@@ -43,13 +43,12 @@ export default class Receitas extends Component<any, State> {
         receitasOriginais: [],
         receitasEmbaralhadas: [],
         usuarioId: "",
-        usuarioNome: "", // <-- INICIALIZE AQUI
+        usuarioNome: "",
     };
 
-    // --- AGORA É ASSÍNCRONO PARA PEGAR DA MEMÓRIA ---
     async componentDidMount() {
         const uid = await AsyncStorage.getItem('usuarioId');
-        const nome = await AsyncStorage.getItem('usuarioNome') || "Chefe Anônimo"; // <-- RECUPERA O NOME
+        const nome = await AsyncStorage.getItem('usuarioNome') || "Chefe Anônimo";
         
         if (uid) {
             this.setState({ usuarioId: uid, usuarioNome: nome }, () => {
@@ -78,7 +77,6 @@ export default class Receitas extends Component<any, State> {
 
     buscarFavoritosDoBanco = async () => {
         try {
-            // Usa o ID real vindo do State
             const resposta = await fetch(`http://localhost:3000/api/favoritos/${this.state.usuarioId}`);
             if (resposta.ok) {
                 const dados = await resposta.json();
@@ -92,7 +90,6 @@ export default class Receitas extends Component<any, State> {
 
     buscarHistoricoDoBanco = async () => {
         try {
-            // Usa o ID real vindo do State
             const resposta = await fetch(`http://localhost:3000/api/historico/${this.state.usuarioId}`);
             if (resposta.ok) {
                 const dados = await resposta.json();
@@ -115,6 +112,7 @@ export default class Receitas extends Component<any, State> {
         this.setState({ modalVisivel: false });
         this.buscarReceitasDoBanco(); 
     };
+    
     toggleFiltros = () => this.setState(prev => ({ filtrosVisiveis: !prev.filtrosVisiveis }));
 
     toggleItemLista = (listaAlvo: 'filtroHabilidade' | 'filtroCulinaria' | 'filtroRestricoes', item: string) => {
@@ -185,7 +183,6 @@ export default class Receitas extends Component<any, State> {
         });
 
         try {
-            // Usa o ID real vindo do State
             await fetch('http://localhost:3000/api/favoritos/toggle', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -194,7 +191,7 @@ export default class Receitas extends Component<any, State> {
                     receitaId: id
                 })
             });
-        } catch (error) {
+        } catch {
             Alert.alert("Erro", "Falha ao registrar favorito.");
         }
     }
@@ -213,7 +210,6 @@ export default class Receitas extends Component<any, State> {
         });
 
         try {
-            // Usa o ID real vindo do State
             await fetch('http://localhost:3000/api/historico/toggle', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -228,92 +224,23 @@ export default class Receitas extends Component<any, State> {
     }
 
     render() {
-        const opcoesHabilidade = ["Iniciante", "Intermediário", "Profissional"];
-        const opcoesCulinaria = ["Japonesa", "Italiana", "Brasileira", "Mexicana"];
-        const opcoesRestricoes = ["Vegetariano", "Vegano", "Intolerante a Lactose", "Alérgico a Amendoim", "Alérgico a frutos do mar", "Sem Glúten"];
-
         const listaExibicao = this.obterReceitasFiltradas();
 
         return (
             <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}> 
                 <HeaderCustomizado />
                 
-                <View style={{ padding: 20, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#ddd', zIndex: 10 }}>
-                    <View style={{flexDirection: 'row', alignItems: 'center', gap: 10}}>
-                        <View style={{flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#eee', borderRadius: 10, paddingHorizontal: 10, height: 45}}>
-                            <EvilIcons name="search" size={20} color="#777" />
-                            <TextInput 
-                                style={{flex: 1, marginLeft: 10, color: '#333'}}
-                                placeholder="Pesquisar receitas..."
-                                value={this.state.termoPesquisa}
-                                onChangeText={(t) => this.setState({termoPesquisa: t})}
-                            />
-                            {this.state.termoPesquisa !== "" && (
-                                <Pressable onPress={() => this.setState({termoPesquisa: ''})}>
-                                    <AntDesign name="close-circle" size={16} color="#bbb" />
-                                </Pressable>
-                            )}
-                        </View>
-                        
-                        <Pressable 
-                            onPress={this.toggleFiltros} 
-                            style={{height: 45, width: 45, backgroundColor: this.state.filtrosVisiveis ? '#FF9D4D' : '#eee', justifyContent: 'center', alignItems: 'center', borderRadius: 10}}
-                        >
-                            <AntDesign name="filter" size={24} color={this.state.filtrosVisiveis ? '#fff' : '#555'} />
-                        </Pressable>
-                    </View>
-
-                    {this.state.filtrosVisiveis && (
-                        <View style={{marginTop: 15}}>
-                            
-                            <Text style={{fontWeight: 'bold', color: '#555', marginBottom: 5}}>Nível de Habilidade</Text>
-                            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginBottom: 15}}>
-                                {opcoesHabilidade.map(item => {
-                                    const selecionado = this.state.filtroHabilidade.includes(item);
-                                    return (
-                                        <Pressable key={item} onPress={() => this.toggleItemLista('filtroHabilidade', item)}
-                                            style={{paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, backgroundColor: selecionado ? '#FF9D4D' : '#f0f0f0', marginRight: 8, borderWidth: 1, borderColor: selecionado ? '#FF9D4D' : '#ddd'}}>
-                                            <Text style={{color: selecionado ? '#fff' : '#666', fontSize: 12}}>{item}</Text>
-                                        </Pressable>
-                                    )
-                                })}
-                            </ScrollView>
-
-                            <Text style={{fontWeight: 'bold', color: '#555', marginBottom: 5}}>Culinária</Text>
-                            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginBottom: 15}}>
-                                {opcoesCulinaria.map(item => {
-                                    const selecionado = this.state.filtroCulinaria.includes(item);
-                                    return (
-                                        <Pressable key={item} onPress={() => this.toggleItemLista('filtroCulinaria', item)}
-                                            style={{paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, backgroundColor: selecionado ? '#FF9D4D' : '#f0f0f0', marginRight: 8, borderWidth: 1, borderColor: selecionado ? '#FF9D4D' : '#ddd'}}>
-                                            <Text style={{color: selecionado ? '#fff' : '#666', fontSize: 12}}>{item}</Text>
-                                        </Pressable>
-                                    )
-                                })}
-                            </ScrollView>
-
-                            <Text style={{fontWeight: 'bold', color: '#555', marginBottom: 5}}>Restrições atreladas</Text>
-                            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginBottom: 10}}>
-                                {opcoesRestricoes.map(item => {
-                                    const selecionado = this.state.filtroRestricoes.includes(item);
-                                    return (
-                                        <Pressable key={item} onPress={() => this.toggleItemLista('filtroRestricoes', item)}
-                                            style={{paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, backgroundColor: selecionado ? '#FF9D4D' : '#f0f0f0', marginRight: 8, borderWidth: 1, borderColor: selecionado ? '#FF9D4D' : '#ddd'}}>
-                                            <Text style={{color: selecionado ? '#fff' : '#666', fontSize: 12}}>{item}</Text>
-                                        </Pressable>
-                                    )
-                                })}
-                            </ScrollView>
-                            
-                            {(this.state.filtroHabilidade.length > 0 || this.state.filtroCulinaria.length > 0 || this.state.filtroRestricoes.length > 0) && (
-                                <Pressable onPress={this.limparFiltros} style={{alignSelf: 'flex-end', paddingVertical: 5}}>
-                                    <Text style={{color: '#FF9D4D', fontWeight: 'bold', fontSize: 12, textDecorationLine: 'underline'}}>Limpar Filtros</Text>
-                                </Pressable>
-                            )}
-
-                        </View>
-                    )}
-                </View>
+                <FiltrosReceita 
+                    termoPesquisa={this.state.termoPesquisa}
+                    onChangeTermoPesquisa={(t: string) => this.setState({ termoPesquisa: t })}
+                    filtrosVisiveis={this.state.filtrosVisiveis}
+                    onToggleFiltros={this.toggleFiltros}
+                    filtroHabilidade={this.state.filtroHabilidade}
+                    filtroCulinaria={this.state.filtroCulinaria}
+                    filtroRestricoes={this.state.filtroRestricoes}
+                    onToggleItemLista={this.toggleItemLista}
+                    onLimparFiltros={this.limparFiltros}
+                />
                 
                 <ScrollView contentContainerStyle={{flexGrow: 1, padding: 20}}>
                     <Pressable style={[style.nova_receita, {marginBottom: 20, backgroundColor: '#FF9D4D', alignSelf: 'center'}]} onPress={this.abrirModal}>

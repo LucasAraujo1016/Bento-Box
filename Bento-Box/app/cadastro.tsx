@@ -3,7 +3,6 @@ import { Text, TextInput, View, Pressable, ScrollView, Alert } from "react-nativ
 import { Picker } from '@react-native-picker/picker'
 import style from "./styleSheet";
 import { router } from "expo-router";
-import Constants from 'expo-constants'
 
 interface State {
     nomeUsuario: string; 

@@ -22,7 +22,6 @@ export default class Login extends Component {
         this.setState({ carregando: true });
 
         try {            
-            
             const baseUrl = "http://localhost:3000";
             
             const urlDaSuaAPI = `${baseUrl}/api/login`;          
@@ -41,7 +40,6 @@ export default class Login extends Component {
 
             if (resposta.ok) {
                 console.log("Token recebido:", dados.token);
-                // SALVA O ID E O NOME DO USUÁRIO LOGADO NO CELULAR
                 await AsyncStorage.setItem('usuarioId', dados.usuario.id);
                 await AsyncStorage.setItem('usuarioNome', dados.usuario.nome);
                 router.replace('/home'); 
@@ -100,4 +98,3 @@ export default class Login extends Component {
         )
     }
 }
-

@@ -110,6 +110,176 @@ const style = StyleSheet.create ({
         fontWeight: 'bold',
         marginBottom: 5,
         color: '#333',
+    },
+
+    headerInternoWrapper: {
+        paddingHorizontal: 20,
+        paddingTop: 20,
+    },
+    headerInterno: {
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.05)',
+        paddingBottom: 12,
+        marginBottom: 15,
+    },
+    headerInternoTitulo: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#FF9D4D', 
+    },
+    headerInternoSub: {
+        fontSize: 12,
+        color: '#888',
+        marginTop: 2,
+    },
+    destaqueCard: {
+        backgroundColor: '#fff',
+        borderRadius: 15,
+        overflow: 'hidden',
+        elevation: 4, 
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        marginBottom: 25,
+    },
+    destaqueImagem: {
+        width: '100%',
+        height: 220,
+        backgroundColor: '#eaeaea',
+    },
+    placeholder: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    destaqueInfo: {
+        padding: 20,
+    },
+    destaqueNome: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#333',
+        marginBottom: 5,
+    },
+    destaqueCulinaria: {
+        fontSize: 12,
+        color: '#FF9D4D',
+        textTransform: 'uppercase',
+        fontWeight: 'bold',
+        marginBottom: 10,
+    },
+    destaqueDescricao: {
+        fontSize: 14,
+        color: '#555',
+        lineHeight: 20,
+    },
+    dicaCard: {
+        backgroundColor: '#FFF3E0', 
+        borderRadius: 12,
+        padding: 20,
+        borderLeftWidth: 6,
+        borderLeftColor: '#FF9D4D', 
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        marginBottom: 25,
+    },
+    dicaTitulo: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#d8721c', 
+        marginBottom: 8,
+    },
+    dicaTexto: {
+        fontSize: 14,
+        color: '#555',
+        lineHeight: 22,
+    },
+    quizCard: {
+        backgroundColor: '#fdfdfd',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#ddd',
+        padding: 20,
+        marginBottom: 30, 
+    },
+    quizInnerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    quizConteudo: {
+        flex: 1,
+        paddingRight: 15,
+    },
+    quizTitulo: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#333',
+        marginBottom: 5,
+    },
+    quizTexto: {
+        fontSize: 14,
+        color: '#555',
+        lineHeight: 20,
+    },
+    quizEmBreveBadge: {
+        backgroundColor: '#eee',
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 20,
+    },
+    quizEmBreveTexto: {
+        fontSize: 10,
+        fontWeight: 'bold',
+        color: '#888',
+    },
+
+    secaoHeaderWrapper: {
+        marginBottom: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0,0,0,0.05)',
+        paddingBottom: 15,
+        alignItems: 'center',
+    },
+    tituloSecao: {
+        fontSize: 24, 
+        fontWeight: 'bold', 
+        color: '#333'
+    },
+    subtituloSecao: {
+        fontSize: 14, 
+        color: '#666', 
+        marginTop: 5
+    },
+    gridContainer: {
+        flexDirection: 'row', 
+        flexWrap: 'wrap', 
+        justifyContent: 'space-between', 
+        width: '100%'
+    },
+    vazioContainer: {
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        marginTop: 50,
+        backgroundColor: '#fff',
+        padding: 30,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#eee'
+    },
+    vazioTexto: {
+        fontSize: 18, 
+        fontWeight: 'bold', 
+        color: '#555', 
+        marginBottom: 5 
+    },
+    vazioSubtexto: {
+        fontSize: 14, 
+        color: '#888', 
+        textAlign: 'center' 
     }
 })
 

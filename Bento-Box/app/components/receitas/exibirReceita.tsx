@@ -1,4 +1,3 @@
-// app/components/exibirReceita.tsx
 import React, { Component } from 'react';
 import { View, Text, Modal, Pressable, ScrollView, Image, StyleSheet } from 'react-native';
 import AntDesign from '@expo/vector-icons/AntDesign';
@@ -34,7 +33,6 @@ export default class ExibirReceita extends Component<Props> {
                 <View style={styles.modalContainer}>
                     <View style={styles.modalCard}>
                         
-                        {/* Header com Botão Fechar e Ações */}
                         <View style={styles.header}>
                             <Pressable onPress={onClose} style={styles.btnClose}>
                                 <AntDesign name="arrow-left" size={24} color="#333" />
@@ -61,7 +59,6 @@ export default class ExibirReceita extends Component<Props> {
                             <View style={styles.conteudo}>
                                 <Text style={styles.titulo}>{receita.nome}</Text>
                                 
-                                {/* ===== NOVO BLOCO ADICIONADO ===== */}
                                 {receita.autorNome && (
                                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, marginTop: -5 }}>
                                         <AntDesign name="user" size={14} color="#FF9D4D" style={{ marginRight: 5 }} />
@@ -70,7 +67,6 @@ export default class ExibirReceita extends Component<Props> {
                                         </Text>
                                     </View>
                                 )}
-                                {/* ================================= */}
 
                                 <Text style={styles.descricao}>{receita.descricao || "Sem descrição disponível."}</Text>
 

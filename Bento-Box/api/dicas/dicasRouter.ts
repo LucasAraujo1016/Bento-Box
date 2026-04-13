@@ -1,10 +1,8 @@
-// api/dicasRouter.ts
 import { Router } from 'express';
 import { Dica } from './dicas';
 
 const router = Router();
 
-// Rota GET para buscar todas as dicas
 router.get('/', async (req, res) => {
     try {
         const dicas = await Dica.find();
@@ -15,12 +13,10 @@ router.get('/', async (req, res) => {
     }
 });
 
-// Opcional: Rota POST para adicionar novas dicas via Postman/Insomnia pra facilitar no futuro
 router.post('/', async (req, res) => {
     try {
         const novasDicas = req.body;
         
-        // Permite inserir tanto um array de dicas (várias de uma vez) quanto uma única
         const dicasSalvas = await Dica.insertMany(Array.isArray(novasDicas) ? novasDicas : [novasDicas]);
         return res.status(201).json(dicasSalvas);
     } catch (error: any) {

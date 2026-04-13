@@ -1,4 +1,3 @@
-// api/dicas.ts
 import mongoose from 'mongoose';
 
 const DicaSchema = new mongoose.Schema({
@@ -9,5 +8,4 @@ const DicaSchema = new mongoose.Schema({
   collection: 'dicas'
 });
 
-// Evita recriar o modelo se ele já estiver registrado, e exporta
 export const Dica = mongoose.models.Dica || mongoose.model('Dica', DicaSchema);

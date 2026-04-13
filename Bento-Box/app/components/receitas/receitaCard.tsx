@@ -5,7 +5,7 @@ export interface ReceitaItem {
     _id?: string;
     id?: string;
     autorId: string;
-    autorNome?: string; // <--- ADICIONE ESTA LINHA
+    autorNome?: string;
     nome: string;
     imagem?: string;
     descricao: string;
@@ -23,7 +23,6 @@ interface Props {
 }
 
 export default function ReceitaCard({ receita, onPress }: Props) {
-    // Se a receita não tiver imagem, colocamos um cinza temporário
     const temImagem = receita.imagem && receita.imagem !== '';
 
     return (
@@ -46,7 +45,7 @@ export default function ReceitaCard({ receita, onPress }: Props) {
 
 const styles = StyleSheet.create({
     card: {
-        width: '48%', // Ocupa quase metade da tela (2 colunas)
+        width: '48%',
         backgroundColor: '#fff',
         borderRadius: 12,
         marginBottom: 15,
@@ -54,8 +53,8 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 3,
-        elevation: 3, // Sombrinha no Android
-        overflow: 'hidden', // Faz a imagem não vazar das bordas redondas
+        elevation: 3,
+        overflow: 'hidden',
     },
     imagem: {
         width: '100%',
@@ -72,14 +71,14 @@ const styles = StyleSheet.create({
     },
     info: {
         padding: 10,
-        height: 70, // Altura fixa para garantir que todos os cards fiquem do mesmo tamanho
-        justifyContent: 'space-between', // Espalha o título para o topo e a tag para a base
+        height: 70,
+        justifyContent: 'space-between',
     },
     titulo: {
         fontWeight: 'bold',
         fontSize: 14,
         color: '#333',
-        height: 38, // Garante o espaço para 2 linhas, não afetando o layout se tiver apenas 1
+        height: 38,
     },
     tags: {
         fontSize: 10,
