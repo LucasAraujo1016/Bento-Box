@@ -88,7 +88,7 @@ export default class cadastro extends Component<any, State> {
         const opcoesDeRestricao = ["Vegetariano", "Vegano", "Intolerante a Lactose", "Alérgico a Amendoim", "Alérgico a frutos do mar","Sem Glúten"];
 
         return (
-            <ScrollView contentContainerStyle={{flexDirection: 'column', alignItems: 'center', gap: 50, paddingBottom: 50, paddingTop: 20}}>
+            <ScrollView contentContainerStyle={{flexDirection: 'column', alignItems: 'center', gap: 50, marginTop: 50, paddingBottom: 50, paddingTop: 20}}>
                 
                 <Text style={{fontSize: 50, fontWeight: 'bold'}}>Novo Usuário</Text>
                 

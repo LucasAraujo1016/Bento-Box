@@ -56,7 +56,7 @@ export default class Login extends Component {
 
     render (){
         return (
-            <View style={{flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 50}}>
+            <View style={{flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 50, marginTop: 100}}>
                 <View style={{flexDirection: 'column', justifyContent: 'center', alignItems: 'center'}}>
                     <Image source={require('../assets/images/logo.png')} style={{width: 250, height: 250, justifyContent: "center", alignItems: 'center'}} />
                     <Text style={{fontSize: 50, fontWeight: 'bold'}}>Bento-Box</Text>

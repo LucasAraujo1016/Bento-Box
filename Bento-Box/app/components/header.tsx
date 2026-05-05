@@ -17,7 +17,6 @@ export default function HeaderCustomizado() {
           text: "Sair", 
           style: "destructive",
           onPress: async () => {
-            // Limpa o AsyncStorage e manda o usuário de volta pro index/login
             await AsyncStorage.removeItem('usuarioId');
             await AsyncStorage.removeItem('usuarioNome');
             router.replace('/'); 
