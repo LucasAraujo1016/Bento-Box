@@ -363,6 +363,95 @@ const style = StyleSheet.create ({
         borderStyle: 'dashed', 
         borderWidth: 1, 
         borderColor: '#ddd' 
+    },
+    containerGeral: {
+        flex: 1, 
+        backgroundColor: '#f5f5f5'
+    },
+    scrollContent: {
+        flexGrow: 1, 
+        padding: 20, 
+        paddingBottom: 10
+    },
+    botoesAcaoWrapper: {
+        flexDirection: 'row', 
+        gap: 10, 
+        marginTop: 10
+    },
+    botaoGerarFlex: {
+        flex: 1, 
+        marginBottom: 0
+    },
+    iconeMarginRight: {
+        marginRight: 10
+    },
+    botaoMeusPlanos: {
+        backgroundColor: '#FF9D4D', 
+        paddingHorizontal: 20, 
+        marginBottom: 0
+    },
+    atualTextoWrapper: {
+        marginTop: 10, 
+        marginBottom: 20
+    },
+    atualTexto: {
+        fontSize: 14, 
+        color: '#666', 
+        fontWeight: '500'
+    },
+    atualTextoDestaque: {
+        color: '#333', 
+        fontWeight: 'bold'
+    },
+    btnPaddingPadrao: {
+        padding: 4
+    },
+    flexInfo: {
+        flex: 1
+    },
+    refeicaoTempo: {
+        fontSize: 12, 
+        color: "#888", 
+        marginTop: 4
+    },
+    refeicaoAcoesWrapper: {
+        flexDirection: 'row', 
+        gap: 12
+    },
+    margemInferiorIcone: {
+        marginBottom: 8
+    },
+    modalCardGrande: {
+        height: '80%'
+    },
+    modalHeaderBox: {
+        flexDirection: 'row', 
+        justifyContent: 'space-between', 
+        marginBottom: 20
+    },
+    itemListaModal: {
+        marginVertical: 6
+    },
+    dataPlanoModal: {
+        fontSize: 12, 
+        color: '#999', 
+        marginTop: 4
+    },
+    btnExcluirPlanoPad: {
+        padding: 10
+    },
+    textoMensagemVazia: {
+        textAlign: 'center', 
+        color: '#888', 
+        marginTop: 20
+    },
+    itemSugestaoReceita: {
+        marginVertical: 5
+    },
+        estadoVazioTexto: {
+        color: '#999', 
+        fontSize: 14, 
+        textAlign: 'center' 
     }
 })
 
