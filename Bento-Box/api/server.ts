@@ -11,6 +11,7 @@ import planejamentoRouter from './planejamento/planejamentoRouter'
 import supabase from './database/supabaseClient';
 import { connectToMongoDB } from './database/mongodb';
 import despensaRouter from './despensa/despensaRouter';
+import perfilRouter from './perfil/perfil';
 
 const app = express();
 app.use(cors());
@@ -24,6 +25,7 @@ app.use('/api/historico', historicoRouter);
 app.use('/api/favoritos', favoritosRouter);
 app.use('/api/planejamento', planejamentoRouter);
 app.use('/api/despensa', despensaRouter);
+app.use('/api/perfil', perfilRouter);
 
 const PORT = process.env.PORT || 3000;
 

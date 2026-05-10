@@ -28,7 +28,7 @@ export default function ModalListaCompras({ visivel, lista, itensNaDespensa, fec
         <Modal visible={visivel} transparent={true} animationType="fade">
             <View style={styles.overlay}>
                 <View style={styles.container}>
-                    <Text style={styles.titulo}>Lista de Compras 🛒</Text>
+                    <Text style={styles.titulo}>Lista de Compras</Text>
                     
                     <ScrollView>
                         {lista.length === 0 ? (
