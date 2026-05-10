@@ -47,7 +47,7 @@ despensaRouter.put('/:id', async (req, res) => {
         const itemAtualizado = await Despensa.findByIdAndUpdate(
             req.params.id, 
             { quantidade }, 
-            { new: true }
+            { returnDocument: 'after' } 
         );
 
         if (itemAtualizado) {
