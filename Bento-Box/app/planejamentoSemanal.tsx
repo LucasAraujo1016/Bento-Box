@@ -34,6 +34,7 @@ interface PlanejamentoState {
     foiModificado: boolean; 
     modalListaVisivel: boolean;
     listaCompras: any[];
+    itensNaDespensa: string[];
 }
 
 export default class PlanejamentoSemanal extends Component<any, PlanejamentoState> {
@@ -63,7 +64,8 @@ export default class PlanejamentoSemanal extends Component<any, PlanejamentoStat
             modalMeusPlanosVisivel: false,
             foiModificado: false, 
             modalListaVisivel: false,
-            listaCompras: []
+            listaCompras: [],
+            itensNaDespensa: []
         };
     }
 
@@ -348,9 +350,52 @@ export default class PlanejamentoSemanal extends Component<any, PlanejamentoStat
         return listaFinal.sort((a, b) => a.nome.localeCompare(b.nome));
     }
 
-    abrirListaDeCompras = () => {
+    abrirListaDeCompras = async () => {
         const novaLista = this.gerarListaDeCompras();
-        this.setState({ listaCompras: novaLista, modalListaVisivel: true });
+        this.setState({ listaCompras: novaLista });
+        
+        try {
+            const resp = await fetch(`http://localhost:3000/api/despensa/${this.state.usuarioId}`);
+            if (resp.ok) {
+                const itensDespensa = await resp.json();
+                
+                const nomesNaDespensa = itensDespensa
+                    .filter((item: any) => item.quantidade >= 1)
+                    .map((item: any) => 
+                        item.nomeItem.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim()
+                    );
+                
+                this.setState({ 
+                    itensNaDespensa: nomesNaDespensa,
+                    modalListaVisivel: true 
+                });
+            } else {
+                 this.setState({ modalListaVisivel: true, itensNaDespensa: [] });
+            }
+        } catch {
+            this.setState({ modalListaVisivel: true, itensNaDespensa: [] });
+        }
+    }
+
+    adicionarParaDespensa = async (nomeItem: string, quantidadeUsuario: number = 1) => {
+        try {
+            const resp = await fetch(`http://localhost:3000/api/despensa`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    usuarioId: this.state.usuarioId, 
+                    nomeItem: nomeItem, 
+                    quantidade: quantidadeUsuario 
+                })
+            });
+
+            if (resp.ok) {
+                Alert.alert("Sucesso", `'${nomeItem}' adicionado à sua despensa!`);
+                this.abrirListaDeCompras(); 
+            }
+        } catch {
+            Alert.alert("Erro", "Não foi possível adicionar o item à despensa.");
+        }
     }
 
     render() {
@@ -462,6 +507,8 @@ export default class PlanejamentoSemanal extends Component<any, PlanejamentoStat
                     visivel={this.state.modalListaVisivel} 
                     lista={this.state.listaCompras}
                     fechar={() => this.setState({ modalListaVisivel: false })}
+                    itensNaDespensa={this.state.itensNaDespensa}               
+                    adicionarParaDespensa={this.adicionarParaDespensa}        
                 />
 
                 {receitaSelecionada && (
