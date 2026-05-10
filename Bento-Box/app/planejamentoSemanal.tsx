@@ -13,6 +13,7 @@ import CardDia from './components/planejamento/cardDia';
 import ModalSalvarPlano from './components/planejamento/modalSalvarPlano';
 import ModalMeusPlanos from './components/planejamento/modalMeusPlanos';
 import ModalOpcoesDia from './components/planejamento/modalOpcoesDia';
+import ModalListaCompras from './components/planejamento/modalListaCompras';
 
 interface PlanejamentoState {
     cardapio: { [key: string]: ReceitaItem[] };
@@ -31,6 +32,8 @@ interface PlanejamentoState {
     nomeTemporario: string;
     modalMeusPlanosVisivel: boolean;
     foiModificado: boolean; 
+    modalListaVisivel: boolean;
+    listaCompras: any[];
 }
 
 export default class PlanejamentoSemanal extends Component<any, PlanejamentoState> {
@@ -58,7 +61,9 @@ export default class PlanejamentoSemanal extends Component<any, PlanejamentoStat
             modalSalvarVisivel: false,
             nomeTemporario: "",
             modalMeusPlanosVisivel: false,
-            foiModificado: false 
+            foiModificado: false, 
+            modalListaVisivel: false,
+            listaCompras: []
         };
     }
 
@@ -278,12 +283,84 @@ export default class PlanejamentoSemanal extends Component<any, PlanejamentoStat
         }); 
     }
 
+    gerarListaDeCompras = () => {
+        const { cardapio } = this.state;
+        const listaAgrupada: Record<string, string[]> = {};
+
+        Object.keys(cardapio).forEach(dia => {
+            cardapio[dia].forEach(receita => {
+                if (receita.ingredientes) {
+                    receita.ingredientes.forEach(ingrediente => {
+                        const nome = ingrediente.nome.trim();
+                        // Trata caso a quantidade venha vazia
+                        const quantidade = ingrediente.quantidade ? ingrediente.quantidade.toString().trim() : '';
+
+                        if (listaAgrupada[nome]) {
+                            listaAgrupada[nome].push(quantidade);
+                        } else {
+                            listaAgrupada[nome] = [quantidade];
+                        }
+                    });
+                }
+            });
+        });
+
+        const somarQuantidades = (quantidades: string[]) => {
+            const totaisPorUnidade: Record<string, number> = {};
+
+            quantidades.forEach(q => {
+                if (!q) return;
+
+                const qLower = q.toLowerCase();
+                if (qLower.includes('colher') || qLower.includes('xícara') || qLower.includes('xicara')) {
+                    return;
+                }
+                
+                const match = q.match(/^([\d.,]+)\s*(.*)$/);
+                
+                if (match) {
+                    const valor = parseFloat(match[1].replace(',', '.'));
+                    
+                    if (!isNaN(valor)) {
+                        const unidade = match[2].trim().toLowerCase();
+                        totaisPorUnidade[unidade] = (totaisPorUnidade[unidade] || 0) + valor;
+                    }
+                }
+            });
+
+            const partesSomadas = Object.keys(totaisPorUnidade).map(unidade => {
+                const totalArredondadoParaCima = Math.ceil(totaisPorUnidade[unidade]);
+                const totalFormatado = totalArredondadoParaCima.toString();
+                
+                const espaco = (unidade === 'g' || unidade === 'kg' || unidade === 'ml' || unidade === 'l') ? '' : ' ';
+                
+                return unidade ? `${totalFormatado}${espaco}${unidade}` : totalFormatado;
+            });
+
+            return partesSomadas.join(' + ');
+        };
+
+        const listaFinal = Object.keys(listaAgrupada).map(nomeIngrediente => {
+            const quantidades = listaAgrupada[nomeIngrediente];
+            const quantidadeAgrupada = somarQuantidades(quantidades);
+            return { nome: nomeIngrediente, quantidadeAgrupada };
+        });
+
+        return listaFinal.sort((a, b) => a.nome.localeCompare(b.nome));
+    }
+
+    abrirListaDeCompras = () => {
+        const novaLista = this.gerarListaDeCompras();
+        this.setState({ listaCompras: novaLista, modalListaVisivel: true });
+    }
+
     render() {
         const { 
             cardapio, receitaSelecionada, idsFavoritos, idsHistorico, 
             sugestoes, diaParaAdicionar, planosSalvos, nomePlanoAtual, 
             modalSalvarVisivel, nomeTemporario, modalMeusPlanosVisivel, 
-            planoAtualId, foiModificado 
+            planoAtualId, foiModificado
+            
         } = this.state;
         
         let sugestoesFiltradas = sugestoes;
@@ -328,17 +405,32 @@ export default class PlanejamentoSemanal extends Component<any, PlanejamentoStat
                         />
                     ))}
 
-                    <TouchableOpacity 
-                        style={[style.botaoGerar, { 
-                            backgroundColor: (planoAtualId && !foiModificado) ? '#ccc' : '#4A90E2', 
-                            marginTop: 20 
-                        }]} 
-                        onPress={this.clicarSalvarPlano}
-                        disabled={!!planoAtualId && !foiModificado}
-                    >
-                        <FontAwesome5 name="save" size={16} color="#FFF" style={style.iconeMarginRight} />
-                        <Text style={style.textoBotaoGerar}>Salvar Planejamento</Text>
-                    </TouchableOpacity>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, marginBottom: 20 }}>
+                        <TouchableOpacity 
+                            style={[style.botaoGerar, { 
+                                flex: 1, 
+                                backgroundColor: (planoAtualId && !foiModificado) ? '#ccc' : '#4A90E2',
+                                marginRight: 5 
+                            }]} 
+                            onPress={this.clicarSalvarPlano}
+                            disabled={!!planoAtualId && !foiModificado}
+                        >
+                            <FontAwesome5 name="save" size={16} color="#FFF" style={style.iconeMarginRight} />
+                            <Text style={style.textoBotaoGerar}>Salvar</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity 
+                            style={[style.botaoGerar, { 
+                                flex: 1, 
+                                backgroundColor: '#4CAF50',
+                                marginLeft: 5
+                            }]} 
+                            onPress={this.abrirListaDeCompras}
+                        >
+                            <FontAwesome5 name="shopping-cart" size={16} color="#FFF" style={style.iconeMarginRight} />
+                            <Text style={style.textoBotaoGerar}>Lista</Text>
+                        </TouchableOpacity>
+                    </View>
                 </ScrollView>
 
                 <ModalSalvarPlano 
@@ -365,6 +457,12 @@ export default class PlanejamentoSemanal extends Component<any, PlanejamentoStat
                     buscandoSugestoes={sugestoes.length === 0}
                     onClose={() => this.setState({ modalReceitasVisivel: false })}
                     onAdicionarReceita={this.adicionarReceitaSelecionadaAoDia}
+                />
+
+                <ModalListaCompras 
+                    visivel={this.state.modalListaVisivel} 
+                    lista={this.state.listaCompras}
+                    fechar={() => this.setState({ modalListaVisivel: false })}
                 />
 
                 {receitaSelecionada && (
