@@ -5,6 +5,7 @@ import { Link } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Feather from '@expo/vector-icons/Feather';
 import Entypo from '@expo/vector-icons/Entypo';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 export default function FooterCustomizado() {
   return (
@@ -22,6 +23,11 @@ export default function FooterCustomizado() {
         <Link href="../planejamentoSemanal" asChild>
             <Pressable>
               <Entypo name="calendar" size={35} color="black" />
+            </Pressable>
+        </Link>
+        <Link href="../despensa" asChild>
+            <Pressable>
+              <MaterialCommunityIcons name="fridge-outline" size={35} color="black" />
             </Pressable>
         </Link>
         <Link href="../historico" asChild>

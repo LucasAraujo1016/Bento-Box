@@ -292,7 +292,6 @@ export default class PlanejamentoSemanal extends Component<any, PlanejamentoStat
                 if (receita.ingredientes) {
                     receita.ingredientes.forEach(ingrediente => {
                         const nome = ingrediente.nome.trim();
-                        // Trata caso a quantidade venha vazia
                         const quantidade = ingrediente.quantidade ? ingrediente.quantidade.toString().trim() : '';
 
                         if (listaAgrupada[nome]) {
