@@ -63,18 +63,29 @@ Este backlog define as funcionalidades planejadas, organizadas por categorias (�
 ---
 
 ## 🏃 Backlog da Sprint (Sprint 1 - Fundações e Acesso)
-*Refere-se à lista de tarefas selecionadas para a Sprint atual, focadas em estruturar o acesso de usuários e o fluxo básico de receitas, refletindo a estrutura da nossa API e telas já iniciadas.*
+*Refere-se à lista de tarefas concluídas na Sprint 1, focadas em estruturar o acesso de usuários e o fluxo básico de receitas.*
 
-### Tarefas da Sprint 1
-| ID | Tarefa / Descrição | Prioridade | Dificuldade |
+### ✅ Entregues na Sprint 1
+| ID | User Story | Prioridade | Dificuldade |
 | :-- | :--- | :--- | :--- |
-| BB1-01 | **(BB02) Desenvolver Cadastro:** Finalizar a interface de usuário (`app/cadastro.tsx`) e integrá-la com a rota do backend (`api/cadastro.ts`). | Muito Alta | Média |
-| BB1-02 | **(BB02) Fluxo de Login:** Finalizar a tela de login (`app/login.tsx`) e implementar a validação de acesso (`api/login.ts`). | Muito Alta | Média |
-| BB1-03 | **(Infra) Configuração de Banco de Dados:** Consolidar a integração da API nos arquivos `mongodb.ts` e `supabaseClient.ts`. | Muito Alta | Média |
-| BB1-04 | **(BB04) Cadastro de Nova Receita:** Construir a interface de inserção (`novaReceita.tsx`) e conectá-la ao endpoint base de receitas (`api/receitas/`). | Alta | Média |
-| BB1-05 | **(BB05/BB06) Feed Básico e Visualização:** Organizar a listagem de pratos na Home (`home.tsx`) usando os componentes de card (`receitaCard.tsx`). | Alta | Baixa |
-
+| BB02 | **Cadastro de Usuário:** Como usuário, quero criar uma conta para sincronizar meus dados entre dispositivos. | Muito Alta | Média |
+| BB03 | **Login de Usuário:** Como usuário, quero acessar o app com minhas credenciais para maior agilidade e segurança. *(Login implementado via credenciais; autenticação biométrica prevista para versão futura.)* | Alta | Média |
+| BB04 | **Cadastro de Receita:** Como cozinheiro, quero criar minhas próprias receitas com fotos, ingredientes e passos. | Muito Alta | Média |
+| BB05 | **Feed e Filtros:** Como usuário, quero buscar receitas por categorias, tempo de preparo e nível de dificuldade. | Muito Alta | Baixa |
+| BB06 | **Visualização Detalhada:** Como cozinheiro, quero visualizar os detalhes da receita de forma clara durante o preparo. | Muito Alta | Baixa |
+| BB07 | **Favoritos e Coleções:** Como usuário, quero salvar receitas em pastas personalizadas (ex: "Jantar Romântico"). | Muito Alta | Média |
+| BB08 | **Histórico e Avaliação:** Como usuário, quero marcar receitas como feitas e salvá-las no meu histórico com uma nota. | Média | Média |
 ---
+
+## 🏃 Backlog da Sprint (Sprint 2 - Inteligência e Planejamento)
+*Focada em trazer inteligência ao app: o usuário passa a planejar sua semana, gerenciar sua despensa e gerar listas de compras automaticamente.*
+
+### Tarefas da Sprint 2
+| ID | User Story | Prioridade | Dificuldade |
+| :-- | :--- | :--- | :--- |
+| BB14 | **Despensa Virtual:** Como usuário, quero cadastrar meus ingredientes para receber sugestões baseadas no que já possuo. | Alta | Difícil |
+| BB15 | **Cardápio Semanal:** Como planejador, quero sugestões de cardápio baseadas no meu perfil e restrições alimentares. | Média | Difícil |
+| BB16 | **Lista de Compras Inteligente:** Como usuário, quero gerar uma lista automática baseada no meu planejamento semanal. | Média | Média |
 
 ## 🛠️ Tecnologias Utilizadas
 - **Front-end:** React Native (Expo)
