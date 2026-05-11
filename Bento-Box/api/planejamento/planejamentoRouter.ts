@@ -1,23 +1,34 @@
 import { Router, Request, Response } from 'express';
 import { Receita } from '../receitas/receitas';
 import supabase from '../database/supabaseClient'; 
-import { Planejamento } from './planejamento'; // Importando o modelo de Planejamento
+import { Planejamento } from './planejamento';
 
 const planejamentoRouter = Router();
 
 const construirFiltros = (usuario: any) => {
     const matchFiltros: any = {};
+    
     if (usuario.restricoes && usuario.restricoes.length > 0) {
         matchFiltros.restricoes = { $all: usuario.restricoes };
     }
+    
+    // Mapeamento que aceita a versão com ou sem acento
     const hierarquiaNivel: Record<string, string[]> = {
         'iniciante': ['iniciante'],
-        'intermediario': ['iniciante', 'intermediario'],
+        'intermediário': ['iniciante', 'intermediario'], // Para bater com o que vem do Supabase (modalPerfil)
+        'intermediario': ['iniciante', 'intermediario'], // Garantia adicional
         'profissional': ['iniciante', 'intermediario', 'profissional']
     };
-    const nivelUsuario = usuario.nivel_habilidade ? usuario.nivel_habilidade.toLowerCase() : 'iniciante';
+    
+    // Deixa tudo minúsculo (Intermediário vira intermediário)
+    let nivelUsuario = usuario.nivel_habilidade ? usuario.nivel_habilidade.toLowerCase() : 'iniciante';
+    
+    // Pega o array hierárquico, ou 'iniciante' como fallback de segurança
     const niveisPermitidos = hierarquiaNivel[nivelUsuario] || ['iniciante']; 
+    
+    // O $in diz ao mongo "Busque receitas cujo nível seja QUALQUER UM desses do array"
     matchFiltros.nivelHabilidade = { $in: niveisPermitidos };
+    
     return matchFiltros;
 };
 
@@ -73,7 +84,7 @@ planejamentoRouter.get('/sugestoes', async (req: Request, res: Response) => {
     } catch { return res.status(500).json({ message: 'Erro interno' }); }
 });
 
-// --- NOVAS ROTAS DE BANCO DE DADOS (MONOGODB - MODELO PLANEJAMENTO) ---
+// --- ROTAS DE BANCO DE DADOS (MONOGODB - MODELO PLANEJAMENTO) ---
 
 // 3. OBTER TODOS OS PLANEJAMENTOS DO USUÁRIO
 planejamentoRouter.get('/lista', async (req: Request, res: Response) => {
@@ -89,7 +100,6 @@ planejamentoRouter.post('/', async (req: Request, res: Response) => {
     try {
         const { usuarioId, nome, cardapio } = req.body;
         
-        // Verifica se já existe um plano com este nome para este usuário
         const existente = await Planejamento.findOne({ usuarioId, nome });
         if (existente) {
             return res.status(400).json({ message: 'Você já possui um planejamento salvo com esse nome.' });
@@ -106,7 +116,6 @@ planejamentoRouter.put('/:id', async (req: Request, res: Response) => {
     try {
         const { nome, cardapio, usuarioId } = req.body;
 
-        // Verifica duplicidade no nome apenas se o ID não for o mesmo que estamos editando
         const existente = await Planejamento.findOne({ usuarioId, nome, _id: { $ne: req.params.id } });
         if (existente) {
             return res.status(400).json({ message: 'Você já possui um planejamento salvo com esse nome.' });

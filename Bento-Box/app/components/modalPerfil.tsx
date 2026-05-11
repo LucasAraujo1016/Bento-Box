@@ -85,7 +85,7 @@ export default function ModalPerfil({ visible, onClose }: ModalPerfilProps) {
             if (novoCampo.hasOwnProperty('nome_usuario')) {
                 await AsyncStorage.setItem('usuarioNome', novoCampo.nome_usuario); 
             }
-        } catch (error) {
+        } catch {
             Alert.alert("Erro", "Erro ao sincronizar essa alteração com o servidor.");
         }
     };
