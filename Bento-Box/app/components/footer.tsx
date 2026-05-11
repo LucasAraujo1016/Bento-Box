@@ -30,16 +30,6 @@ export default function FooterCustomizado() {
               <MaterialCommunityIcons name="fridge-outline" size={35} color="black" />
             </Pressable>
         </Link>
-        <Link href="../historico" asChild>
-            <Pressable>
-              <AntDesign name="history" size={35} color="black" />
-            </Pressable>
-        </Link>
-        <Link href="../favoritos" asChild>
-            <Pressable>
-              <Feather name="heart" size={35} color="black" />
-            </Pressable>
-        </Link>
     </View>
   );
 }

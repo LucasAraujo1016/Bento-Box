@@ -12,17 +12,14 @@ interface ModalPerfilProps {
 export default function ModalPerfil({ visible, onClose }: ModalPerfilProps) {
     const [carregando, setCarregando] = useState(false);
     const [usuarioId, setUsuarioId] = useState<string | null>(null);
+    const [totalReceitasCriadas, setTotalReceitasCriadas] = useState(0); // Renomeei o state
 
-    // Estados e Modos de Edição Individuais
     const [nome, setNome] = useState('');
     const [editandoNome, setEditandoNome] = useState(false);
-
     const [culinaria, setCulinaria] = useState('');
     const [editandoCulinaria, setEditandoCulinaria] = useState(false);
-
     const [habilidade, setHabilidade] = useState('');
     const [editandoHabilidade, setEditandoHabilidade] = useState(false);
-
     const [restricoesAtuais, setRestricoesAtuais] = useState<string[]>([]);
     const [editandoRestricoes, setEditandoRestricoes] = useState(false);
 
@@ -48,14 +45,27 @@ export default function ModalPerfil({ visible, onClose }: ModalPerfilProps) {
             if (!uid) return;
             setUsuarioId(uid);
 
-            const resposta = await fetch(`http://localhost:3000/api/perfil/${uid}`);
-            if (resposta.ok) {
-                const dados = await resposta.json();
+            // Fetch dados do perfil
+            const respostaPerfil = fetch(`http://localhost:3000/api/perfil/${uid}`);
+            
+            // Fetch contando quantas receitas este usuário (autorId) criou
+            const respostaReceitasCount = fetch(`http://localhost:3000/api/receitas/autor/${uid}/count`);
+
+            const [resPerfil, resCount] = await Promise.all([respostaPerfil, respostaReceitasCount]);
+
+            if (resPerfil.ok) {
+                const dados = await resPerfil.json();
                 setNome(dados.nome_usuario || '');
                 setHabilidade(dados.nivel_habilidade || '');
                 setCulinaria(dados.culinaria_favorita || '');
                 setRestricoesAtuais(dados.restricoes || []);
             }
+
+            if (resCount.ok) {
+                const dadosCount = await resCount.json();
+                setTotalReceitasCriadas(dadosCount.total || 0); // Atualiza com contagem de CRIAÇÕES
+            }
+
         } catch (error) {
             console.error(error);
         } finally {
@@ -81,7 +91,6 @@ export default function ModalPerfil({ visible, onClose }: ModalPerfilProps) {
 
             if (!resposta.ok) throw new Error("Falha na API");
             
-            // Se foi nome sendo salvo, atualiza o cache local
             if (novoCampo.hasOwnProperty('nome_usuario')) {
                 await AsyncStorage.setItem('usuarioNome', novoCampo.nome_usuario); 
             }
@@ -133,19 +142,17 @@ export default function ModalPerfil({ visible, onClose }: ModalPerfilProps) {
         ]);
     };
 
-    return (
-        <Modal 
-            visible={visible} 
-            animationType="slide" // Modal subirá/aparecerá de forma nativa e sobreposta
-            transparent={true}
-        >
-            <View style={styles.overlay}>
-                {/* TouchableOpacity da ESQUERDA (Área escura) para fechar o Modal */}
-                <TouchableOpacity style={styles.backgroundClose} onPress={onClose} activeOpacity={1} />
+    // Navega e fecha o modal
+    const navegarPara = (rota: any) => {
+        onClose();
+        router.push(rota);
+    };
 
-                {/* Drawer que ficará posicionado à DIREITA */}
+    return (
+        <Modal visible={visible} animationType="slide" transparent={true}>
+            <View style={styles.overlay}>
+                <TouchableOpacity style={styles.backgroundClose} onPress={onClose} activeOpacity={1} />
                 <View style={styles.drawerContainer}>
-                    
                     <View style={styles.drawerHeader}>
                         <Text style={styles.drawerTitle}>Meu Perfil</Text>
                         <TouchableOpacity onPress={onClose}>
@@ -158,6 +165,15 @@ export default function ModalPerfil({ visible, onClose }: ModalPerfilProps) {
                     ) : (
                         <ScrollView contentContainerStyle={styles.drawerContent} showsVerticalScrollIndicator={false}>
                             
+                            {/* --- ESTATÍSTICAS --- */}
+                            <View style={styles.estatisticasCard}>
+                                <FontAwesome5 name="book-open" size={24} color="#4A90E2" /> 
+                                <View style={{ marginLeft: 15 }}>
+                                    <Text style={styles.estatisticaValor}>{totalReceitasCriadas}</Text>
+                                    <Text style={styles.estatisticaLabel}>Receitas Criadas</Text>
+                                </View>
+                            </View>
+
                             {/* --- CAMPO NOME --- */}
                             <Text style={styles.labelForm}>Nome</Text>
                             {!editandoNome ? (
@@ -263,12 +279,31 @@ export default function ModalPerfil({ visible, onClose }: ModalPerfilProps) {
                                     </View>
                                 </View>
                             )}
+
+                            {/* --- NAVEGAÇÃO INTERNA DO PERFIL --- */}
+                            <View style={styles.navMenu}>
+                                <Text style={styles.labelForm}>Minhas Atividades</Text>
+                                <TouchableOpacity style={styles.navItem} onPress={() => navegarPara('/favoritos')}>
+                                    <View style={styles.navItemEsq}>
+                                        <FontAwesome5 name="heart" size={18} color="#FF4D4D" solid />
+                                        <Text style={styles.navItemText}>Receitas Favoritas</Text>
+                                    </View>
+                                    <FontAwesome5 name="chevron-right" size={14} color="#ccc" />
+                                </TouchableOpacity>
+                                
+                                <TouchableOpacity style={styles.navItem} onPress={() => navegarPara('/historico')}>
+                                    <View style={styles.navItemEsq}>
+                                        <FontAwesome5 name="history" size={18} color="#4A90E2" />
+                                        <Text style={styles.navItemText}>Histórico de Receitas</Text>
+                                    </View>
+                                    <FontAwesome5 name="chevron-right" size={14} color="#ccc" />
+                                </TouchableOpacity>
+                            </View>
                             
                             <View style={{ height: 40 }} /> 
                         </ScrollView>
                     )}
 
-                    {/* Footer - Sair da conta */}
                     <View style={styles.drawerFooter}>
                         <TouchableOpacity style={styles.botaoSair} onPress={handleLogout}>
                             <FontAwesome5 name="sign-out-alt" size={16} color="#FFF" style={{marginRight: 10}} />
@@ -277,14 +312,12 @@ export default function ModalPerfil({ visible, onClose }: ModalPerfilProps) {
                     </View>
 
                 </View>
-
             </View>
         </Modal>
     );
 }
 
 const styles = StyleSheet.create({
-    // Mudança de flexDirection e justifyContent mantém o modal colado na Direita da tela inteira nativa
     overlay: { flex: 1, flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
     backgroundClose: { flex: 1 },
     drawerContainer: { width: '82%', maxWidth: 350, backgroundColor: '#fff', height: '100%', elevation: 15 }, 
@@ -292,6 +325,10 @@ const styles = StyleSheet.create({
     drawerHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#eee', backgroundColor: '#fafafa' },
     drawerTitle: { fontSize: 20, fontWeight: 'bold' },
     drawerContent: { padding: 20 },
+
+    estatisticasCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f0f8ff', padding: 15, borderRadius: 10, borderWidth: 1, borderColor: '#cae6ff', marginBottom: 10 },
+    estatisticaValor: { fontSize: 22, fontWeight: 'bold', color: '#333' },
+    estatisticaLabel: { fontSize: 13, color: '#666', fontWeight: '500' },
     
     labelForm: { fontSize: 13, fontWeight: 'bold', color: '#888', marginTop: 20, marginBottom: 5, textTransform: 'uppercase' },
     
@@ -317,6 +354,11 @@ const styles = StyleSheet.create({
     botaoOpcaoAtivo: { backgroundColor: '#FF9D4D', borderColor: '#FF9D4D' },
     textoOpcao: { color: '#555', fontWeight: '500', textAlign: 'center' },
     textoOpcaoAtivo: { color: '#fff', fontWeight: 'bold' },
+
+    navMenu: { marginTop: 15, borderTopWidth: 1, borderTopColor: '#f0f0f0', paddingTop: 10 },
+    navItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 15, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f9f9f9' },
+    navItemEsq: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    navItemText: { fontSize: 16, fontWeight: '500', color: '#444' },
 
     drawerFooter: { padding: 20, borderTopWidth: 1, borderTopColor: '#eee', backgroundColor: '#fafafa' },
     botaoSair: { flexDirection: 'row', backgroundColor: '#FF4D4D', padding: 15, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
