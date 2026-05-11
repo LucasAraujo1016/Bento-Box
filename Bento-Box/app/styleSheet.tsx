@@ -7,6 +7,7 @@ const style = StyleSheet.create ({
         width: '100%', 
         height: 117,
         gap: 10,
+        marginTop: 39,
         justifyContent: 'center',
         alignItems: 'center',
         position: 'relative'
@@ -17,7 +18,7 @@ const style = StyleSheet.create ({
         backgroundColor: '#FF9D4D', 
         width: '100%',
         height: 85,
-        gap: 40,
+        gap: 50,
         justifyContent: 'center',
         alignItems: 'center'
     },
@@ -288,6 +289,169 @@ const style = StyleSheet.create ({
         bottom: 10,
         right: 15,
         padding: 5
+    },
+
+    botaoGerar: {
+        backgroundColor: '#FF9D4D',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 14,
+        borderRadius: 8,
+        marginBottom: 20,
+        shadowColor: '#FF9D4D',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 5,
+        elevation: 4
+    },
+    textoBotaoGerar: {
+        color: '#FFF',
+        fontSize: 16,
+        fontWeight: 'bold'
+    },
+    cardDia: {
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        padding: 15,
+        marginBottom: 15,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3
+    },
+    topoCard: {
+        flexDirection: 'row', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        marginBottom: 12
+    },
+    tituloDia: {
+        fontSize: 18, 
+        fontWeight: 'bold', 
+        color: '#333'
+    },
+    refeicaoItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: '#F9F9F9',
+        padding: 12,
+        borderRadius: 8,
+        marginBottom: 8,
+        borderLeftWidth: 4,
+        borderLeftColor: '#FF9D4D'
+    },
+    tipoRefeicao: {
+        fontSize: 12,
+        color: '#888',
+        fontWeight: '600',
+        textTransform: 'uppercase'
+    },
+    nomeRefeicao: {
+        fontSize: 15,
+        color: '#333',
+        fontWeight: '500',
+        marginTop: 2
+    },
+    estadoVazioPlanejamento: {
+        backgroundColor: '#FAFAFA', 
+        padding: 20, 
+        borderRadius: 8, 
+        alignItems: 'center', 
+        borderStyle: 'dashed', 
+        borderWidth: 1, 
+        borderColor: '#ddd' 
+    },
+    containerGeral: {
+        flex: 1, 
+        backgroundColor: '#f5f5f5'
+    },
+    scrollContent: {
+        flexGrow: 1, 
+        padding: 20, 
+        paddingBottom: 10
+    },
+    botoesAcaoWrapper: {
+        flexDirection: 'row', 
+        gap: 10, 
+        marginTop: 10
+    },
+    botaoGerarFlex: {
+        flex: 1, 
+        marginBottom: 0
+    },
+    iconeMarginRight: {
+        marginRight: 10
+    },
+    botaoMeusPlanos: {
+        backgroundColor: '#FF9D4D', 
+        paddingHorizontal: 20, 
+        marginBottom: 0
+    },
+    atualTextoWrapper: {
+        marginTop: 10, 
+        marginBottom: 20
+    },
+    atualTexto: {
+        fontSize: 14, 
+        color: '#666', 
+        fontWeight: '500'
+    },
+    atualTextoDestaque: {
+        color: '#333', 
+        fontWeight: 'bold'
+    },
+    btnPaddingPadrao: {
+        padding: 4
+    },
+    flexInfo: {
+        flex: 1
+    },
+    refeicaoTempo: {
+        fontSize: 12, 
+        color: "#888", 
+        marginTop: 4
+    },
+    refeicaoAcoesWrapper: {
+        flexDirection: 'row', 
+        gap: 12
+    },
+    margemInferiorIcone: {
+        marginBottom: 8
+    },
+    modalCardGrande: {
+        height: '80%'
+    },
+    modalHeaderBox: {
+        flexDirection: 'row', 
+        justifyContent: 'space-between', 
+        marginBottom: 20
+    },
+    itemListaModal: {
+        marginVertical: 6
+    },
+    dataPlanoModal: {
+        fontSize: 12, 
+        color: '#999', 
+        marginTop: 4
+    },
+    btnExcluirPlanoPad: {
+        padding: 10
+    },
+    textoMensagemVazia: {
+        textAlign: 'center', 
+        color: '#888', 
+        marginTop: 20
+    },
+    itemSugestaoReceita: {
+        marginVertical: 5
+    },
+        estadoVazioTexto: {
+        color: '#999', 
+        fontSize: 14, 
+        textAlign: 'center' 
     }
 })
 
