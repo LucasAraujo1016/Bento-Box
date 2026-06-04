@@ -118,11 +118,12 @@ export default class NovaReceita extends Component<Props, State> {
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ['images'],
             allowsEditing: false, 
-            quality: 1,
+            quality: 0.5, 
+            base64: true, 
         });
 
         if (!result.canceled) {
-            this.setState({ imagem: result.assets[0].uri });
+            this.setState({ imagem: `data:image/jpeg;base64,${result.assets[0].base64}` });
         }
     };
 
@@ -136,11 +137,12 @@ export default class NovaReceita extends Component<Props, State> {
         let result = await ImagePicker.launchCameraAsync({
             mediaTypes: ['images'],
             allowsEditing: false,
-            quality: 1,
+            quality: 0.5, 
+            base64: true,
         });
 
         if (!result.canceled) {
-            this.setState({ imagem: result.assets[0].uri });
+            this.setState({ imagem: `data:image/jpeg;base64,${result.assets[0].base64}` });
         }
     };
 
