@@ -1,6 +1,6 @@
 import { Component } from "react";
-import { Text, TextInput, View, Pressable, ScrollView, Alert } from "react-native";
-import { Picker } from '@react-native-picker/picker'
+import { Text, TextInput, View, Pressable, ScrollView, Alert, KeyboardAvoidingView, Platform } from "react-native";
+import { Picker } from '@react-native-picker/picker';
 import style from "./styleSheet";
 import { router } from "expo-router";
 
@@ -51,7 +51,6 @@ export default class cadastro extends Component<any, State> {
 
         try {
             const baseUrl = "http://localhost:3000";
-            
             const urlDaSuaAPI = `${baseUrl}/api/cadastro`;  
             
             const resposta = await fetch(urlDaSuaAPI, {
@@ -88,103 +87,119 @@ export default class cadastro extends Component<any, State> {
         const opcoesDeRestricao = ["Vegetariano", "Vegano", "Intolerante a Lactose", "Alérgico a Amendoim", "Alérgico a frutos do mar","Sem Glúten"];
 
         return (
-            <ScrollView contentContainerStyle={{flexDirection: 'column', alignItems: 'center', gap: 50, marginTop: 50, paddingBottom: 50, paddingTop: 20}}>
-                
-                <Text style={{fontSize: 50, fontWeight: 'bold'}}>Novo Usuário</Text>
-                
-                <View style={{flexDirection: 'column', gap: 20, justifyContent: 'center', alignItems: 'center'}}>
-                    <TextInput 
-                        style={style.input_login} 
-                        placeholder="Nome de Usuário"
-                        value={this.state.nomeUsuario}
-                        onChangeText={(t) => this.setState({ nomeUsuario: t })}
-                    />
-                    <TextInput 
-                        style={style.input_login} 
-                        placeholder="Email"
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                        value={this.state.email}
-                        onChangeText={(t) => this.setState({ email: t })}
-                    />
-                    <TextInput 
-                        style={style.input_login} 
-                        placeholder="Senha"
-                        secureTextEntry
-                        value={this.state.senha}
-                        onChangeText={(t) => this.setState({ senha: t })}
-                    />
+            <KeyboardAvoidingView 
+                style={{ flex: 1, backgroundColor: '#FFFFFF' }} 
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
+            >
+                <ScrollView contentContainerStyle={style.scrollContainerCadastro}>
                     
-                    <View style={style.input_login}>
-                        <Picker
-                            selectedValue={this.state.culinariaFavorita}                            
-                            onValueChange={(itemValue) => 
-                                this.setState({culinariaFavorita: itemValue})
-                            }
+                    <View style={style.cabecalhoCadastro}>
+                        <Text style={style.tituloCadastro}>Criar Conta</Text>
+                        <Text style={style.subtituloCadastro}>Preencha seus dados para começar a planejar suas refeições com o Bento-Box!</Text>
+                    </View>
+                    
+                    <View style={style.formContainerCadastro}>
+                        <Text style={style.labelCadastro}>Nome Completo</Text>
+                        <TextInput 
+                            style={style.inputFormCadastro} 
+                            placeholder="Ex: João da Silva"
+                            placeholderTextColor="#999"
+                            value={this.state.nomeUsuario}
+                            onChangeText={(t) => this.setState({ nomeUsuario: t })}
+                        />
+
+                        <Text style={style.labelCadastro}>E-mail</Text>
+                        <TextInput 
+                            style={style.inputFormCadastro} 
+                            placeholder="seu@email.com"
+                            placeholderTextColor="#999"
+                            keyboardType="email-address"
+                            autoCapitalize="none"
+                            value={this.state.email}
+                            onChangeText={(t) => this.setState({ email: t })}
+                        />
+
+                        <Text style={style.labelCadastro}>Senha</Text>
+                        <TextInput 
+                            style={style.inputFormCadastro} 
+                            placeholder="Crie uma senha segura"
+                            placeholderTextColor="#999"
+                            secureTextEntry
+                            value={this.state.senha}
+                            onChangeText={(t) => this.setState({ senha: t })}
+                        />
+                        
+                        <Text style={style.labelCadastro}>Culinária Favorita</Text>
+                        <View style={style.pickerWrapperCadastro}>
+                            <Picker
+                                selectedValue={this.state.culinariaFavorita}                            
+                                onValueChange={(itemValue) => 
+                                    this.setState({culinariaFavorita: itemValue})
+                                }
+                                style={style.pickerBaseCadastro}
+                            >
+                                <Picker.Item label="Selecione sua culinária favorita" value="" color="#999" />
+                                <Picker.Item label="Japonesa" value="japonesa" />
+                                <Picker.Item label="Italiana" value="italiana" />
+                                <Picker.Item label="Brasileira" value="brasileira" />
+                                <Picker.Item label="Mexicana" value="mexicana" />
+                            </Picker>                
+                        </View>
+                        
+                        <Text style={style.labelCadastro}>Nível de Habilidade</Text>
+                        <View style={style.pickerWrapperCadastro}>
+                            <Picker
+                                selectedValue={this.state.nivelDeHabilidade}
+                                onValueChange={(itemValue) =>
+                                    this.setState({nivelDeHabilidade: itemValue})
+                                }
+                                style={style.pickerBaseCadastro}
+                            >
+                                <Picker.Item label="Selecione seu nível de habilidade" value="" color="#999" />
+                                <Picker.Item label="Iniciante" value="iniciante" />
+                                <Picker.Item label="Intermediário" value="intermediario" />
+                                <Picker.Item label="Profissional" value="profissional" />
+                            </Picker>
+                        </View>
+
+                        <Text style={[style.labelCadastro, { marginTop: 25 }]}>Possui alguma restrição alimentar?</Text>
+                        
+                        <View style={style.tagsContainerCadastro}>
+                            {opcoesDeRestricao.map((item) => {
+                                const estaSelecionado = this.state.restricoes.includes(item);
+
+                                return (
+                                    <Pressable
+                                        key={item}
+                                        onPress={() => this.toggleRestricao(item)}
+                                        style={[
+                                            style.tagRestricao, 
+                                            estaSelecionado && style.tagRestricaoAtiva
+                                        ]}
+                                    >
+                                        <Text style={[
+                                            style.tagRestricaoTexto,
+                                            estaSelecionado && style.tagRestricaoTextoAtiva
+                                        ]}>
+                                            {item}
+                                        </Text>
+                                    </Pressable>
+                                )
+                            })}
+                        </View>
+
+                        <Pressable 
+                            style={[style.botaoSubmitCadastro, this.state.carregando && { opacity: 0.7 }]} 
+                            onPress={this.handleCadastro}
+                            disabled={this.state.carregando}
                         >
-                            <Picker.Item label="Selecione sua culinária favorita" value="" />
-                            <Picker.Item label="Japonesa" value="japonesa" />
-                            <Picker.Item label="Italiana" value="italiana" />
-                            <Picker.Item label="Brasileira" value="brasileira" />
-                            <Picker.Item label="Mexicana" value="mexicana" />
-                        </Picker>                
+                            <Text style={style.botaoSubmitTextCadastro}>
+                                {this.state.carregando ? "Criando conta..." : "Cadastrar"}
+                            </Text>
+                        </Pressable>
                     </View>
-                    
-                    <View style={style.input_login}>
-                        <Picker
-                            selectedValue={this.state.nivelDeHabilidade}
-                            onValueChange={(itemValue) =>
-                                this.setState({nivelDeHabilidade: itemValue})
-                            }
-                        >
-                            <Picker.Item label="Selecione seu nivel de habilidade" value="" />
-                            <Picker.Item label="Iniciante" value="iniciante" />
-                            <Picker.Item label="Intermediario" value="intermediario" />
-                            <Picker.Item label="Profissional" value="profissional" />
-                        </Picker>
-                    </View>
-
-                    <Text style={{fontSize: 16, color: '#333'}}>Restrições (Selecione várias):</Text>
-                    
-                    <View style={{flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center', paddingHorizontal: 20}}>
-                        {opcoesDeRestricao.map((item) => {
-                            const estaSelecionado = this.state.restricoes.includes(item);
-
-                            return (
-                                <Pressable
-                                    key={item}
-                                    onPress={() => this.toggleRestricao(item)}
-                                    style={{
-                                        paddingHorizontal: 15,
-                                        paddingVertical: 10,
-                                        borderRadius: 20,
-                                        borderWidth: 1,
-                                        borderColor: '#007AFF',
-                                        backgroundColor: estaSelecionado ? '#007AFF' : 'transparent', 
-                                    }}
-                                >
-                                    <Text style={{ 
-                                        color: estaSelecionado ? '#FFF' : '#007AFF', 
-                                        fontWeight: 'bold'
-                                    }}>
-                                        {item}
-                                    </Text>
-                                </Pressable>
-                            )
-                        })}
-                    </View>
-
-                    <Pressable 
-                        style={[style.login_button, this.state.carregando && { opacity: 0.5 }]} 
-                        onPress={this.handleCadastro}
-                        disabled={this.state.carregando}
-                    >
-                        <Text style={{fontSize: 25}}>
-                            {this.state.carregando ? "Cadastrando..." : "Cadastrar"}
-                        </Text>
-                    </Pressable>
-                </View>
-            </ScrollView>
+                </ScrollView>
+            </KeyboardAvoidingView>
         )
     }
 }

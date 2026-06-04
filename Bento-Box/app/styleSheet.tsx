@@ -452,6 +452,97 @@ const style = StyleSheet.create ({
         color: '#999', 
         fontSize: 14, 
         textAlign: 'center' 
+    },
+    scrollContainerCadastro: {
+        flexGrow: 1,
+        paddingHorizontal: 25,
+        paddingTop: 60,
+        paddingBottom: 40,
+    },
+    cabecalhoCadastro: {
+        marginBottom: 35,
+    },
+    tituloCadastro: {
+        fontSize: 34,
+        fontWeight: 'bold',
+        color: '#FF9D4D',
+        marginBottom: 8,
+    },
+    subtituloCadastro: {
+        fontSize: 15,
+        color: '#666',
+        lineHeight: 22,
+    },
+    formContainerCadastro: {
+        flexDirection: 'column',
+    },
+    labelCadastro: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#333',
+        marginBottom: 8,
+        marginTop: 15,
+    },
+    inputFormCadastro: {
+        backgroundColor: '#F9F9F9',
+        borderWidth: 1,
+        borderColor: '#E8E8E8',
+        borderRadius: 12,
+        padding: 16,
+        fontSize: 16,
+        color: '#333',
+    },
+    pickerWrapperCadastro: {
+        backgroundColor: '#F9F9F9',
+        borderWidth: 1,
+        borderColor: '#E8E8E8',
+        borderRadius: 12,
+        overflow: 'hidden',
+    },
+    pickerBaseCadastro: {
+        height: 55, // Melhora o visual do picker em algumas plataformas
+    },
+    tagsContainerCadastro: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 10,
+        marginTop: 5,
+    },
+    tagRestricao: {
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 20,
+        borderWidth: 1.5,
+        borderColor: '#FF9D4D',
+        backgroundColor: 'transparent',
+    },
+    tagRestricaoAtiva: {
+        backgroundColor: '#FF9D4D',
+    },
+    tagRestricaoTexto: {
+        color: '#FF9D4D',
+        fontWeight: 'bold',
+        fontSize: 13,
+    },
+    tagRestricaoTextoAtiva: {
+        color: '#FFF',
+    },
+    botaoSubmitCadastro: {
+        backgroundColor: '#FF9D4D',
+        paddingVertical: 18,
+        borderRadius: 12,
+        alignItems: 'center',
+        marginTop: 40,
+        shadowColor: '#FF9D4D',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 5,
+        elevation: 4,
+    },
+    botaoSubmitTextCadastro: {
+        color: '#FFF',
+        fontSize: 18,
+        fontWeight: 'bold',
     }
 })
 
