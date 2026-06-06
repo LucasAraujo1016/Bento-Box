@@ -4,15 +4,31 @@ import style from "./styleSheet";
 import { Link, router } from "expo-router";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Feather from '@expo/vector-icons/Feather';
+import {
+    biometriaEstaAtiva,
+    autenticarComDigital,
+    hardwareSuportado,
+} from '../api/biometriaService';
 
 export default class Login extends Component {
     state = {
         email: "",
         senha: "",
         carregando: false,
-        mostrarSenha: false
+        mostrarSenha: false,
+        mostrarBotaoBiometria: false,
     };
 
+    async componentDidMount() {
+        try {
+            const ativa = await biometriaEstaAtiva();
+            this.setState({ mostrarBotaoBiometria: ativa });
+        } catch (e) {
+            console.warn('Erro ao verificar biometria:', e);
+        }
+    }
+
+    // ─── Login normal (email + senha) ─────────────────────────────────────────
     handleLogin = async () => {
         const { email, senha } = this.state;
 
@@ -23,62 +39,106 @@ export default class Login extends Component {
 
         this.setState({ carregando: true });
 
-        try {            
-            const baseUrl = "http://localhost:3000";
-            
-            const urlDaSuaAPI = `${baseUrl}/api/login`;          
-            const resposta = await fetch(urlDaSuaAPI, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    email: email,
-                    senha: senha
-                })
-            });
+        try {
+            const sucesso = await this.fazerRequisicaoLogin(email, senha);
 
-            const dados = await resposta.json();
+            if (sucesso) {
+                // Salva credenciais para o perfil poder ativar biometria
+                await AsyncStorage.setItem('loginEmail', email);
+                await AsyncStorage.setItem('loginSenha', senha);
 
-            if (resposta.ok) {
-                console.log("Token recebido:", dados.token);
-                await AsyncStorage.setItem('usuarioId', dados.usuario.id);
-                await AsyncStorage.setItem('usuarioNome', dados.usuario.nome);
-                router.replace('/home'); 
-            } else {
-                Alert.alert("Erro no Login", dados.erro || "Verifique suas credenciais");
+                await this.oferecerBiometriaSeDisponivel();
             }
-        } catch (erro) {
-            console.error("Erro na requisição:", erro);
-            Alert.alert("Erro", "Não foi possível conectar ao servidor");
         } finally {
             this.setState({ carregando: false });
         }
     };
 
+    // ─── Login biométrico ──────────────────────────────────────────────────────
+    handleLoginBiometrico = async () => {
+        this.setState({ carregando: true });
+        try {
+            const credenciais = await autenticarComDigital();
+            if (!credenciais) return;
+            await this.fazerRequisicaoLogin(credenciais.email, credenciais.senha);
+        } catch (e) {
+            Alert.alert("Erro", "Não foi possível autenticar com a digital.");
+        } finally {
+            this.setState({ carregando: false });
+        }
+    };
+
+    // ─── Lógica central de login ───────────────────────────────────────────────
+    fazerRequisicaoLogin = async (email: string, senha: string): Promise<boolean> => {
+        try {
+            const resposta = await fetch("http://localhost:3000/api/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, senha }),
+            });
+
+            const dados = await resposta.json();
+
+            if (resposta.ok) {
+                await AsyncStorage.setItem('usuarioId', dados.usuario.id);
+                await AsyncStorage.setItem('usuarioNome', dados.usuario.nome);
+                router.replace('/home');
+                return true;
+            } else {
+                Alert.alert("Erro no Login", dados.erro || "Verifique suas credenciais");
+                return false;
+            }
+        } catch (erro) {
+            console.error("Erro na requisição:", erro);
+            Alert.alert("Erro", "Não foi possível conectar ao servidor");
+            return false;
+        }
+    };
+
+    // Avisa o usuário sobre a possibilidade de ativar biometria no perfil
+    oferecerBiometriaSeDisponivel = async () => {
+        try {
+            const jáAtiva = await biometriaEstaAtiva();
+            if (jáAtiva) return;
+
+            const suportado = await hardwareSuportado();
+            if (!suportado) return;
+
+            setTimeout(() => {
+                Alert.alert(
+                    "Ativar login por digital?",
+                    "Você pode ativar o acesso por digital nas configurações do seu perfil.",
+                    [{ text: "Entendi" }]
+                );
+            }, 800);
+        } catch (e) {
+            // Silencioso — não bloqueia o login
+        }
+    };
+
     toggleMostrarSenha = () => {
         this.setState((prev: any) => ({ mostrarSenha: !prev.mostrarSenha }));
-    }
+    };
 
-    render (){
+    render() {
+        const { carregando, mostrarSenha, mostrarBotaoBiometria } = this.state;
+
         return (
-            /* ScrollView com flexGrow garante a rolagem apenas quando necessário */
             <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 50 }}>
-                
-                {/* Mantivemos sua margem e alinhamentos originais */}
-                <View style={{flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 50, marginTop: 100}}>
-                    
-                    <View style={{flexDirection: 'column', justifyContent: 'center', alignItems: 'center'}}>
-                        <Image source={require('../assets/images/logo.png')} style={{width: 250, height: 250, justifyContent: "center", alignItems: 'center'}} />
-                        <Text style={{fontSize: 50, fontWeight: 'bold'}}>Bento-Box</Text>
+                <View style={{ flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 50, marginTop: 100 }}>
+
+                    {/* Logo */}
+                    <View style={{ flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                        <Image source={require('../assets/images/logo.png')} style={{ width: 250, height: 250, justifyContent: "center", alignItems: 'center' }} />
+                        <Text style={{ fontSize: 50, fontWeight: 'bold' }}>Bento-Box</Text>
                     </View>
 
-                    <View style={{flexDirection: 'column', gap: 20}}>
-                        {/* E-mail re-estilizado em View separada e moderna */}
+                    {/* Campos */}
+                    <View style={{ flexDirection: 'column', gap: 20 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#D9D9D9', width: 302, height: 58, borderRadius: 10, paddingHorizontal: 15 }}>
                             <Feather name="mail" size={20} color="#666" style={{ marginRight: 10 }} />
-                            <TextInput 
-                                style={{ flex: 1, fontSize: 16, fontWeight: 'bold' }} 
+                            <TextInput
+                                style={{ flex: 1, fontSize: 16, fontWeight: 'bold' }}
                                 placeholder="E-mail"
                                 value={this.state.email}
                                 onChangeText={(texto) => this.setState({ email: texto })}
@@ -87,44 +147,64 @@ export default class Login extends Component {
                             />
                         </View>
 
-                        {/* Senha com olhinho adicionado mantendo as medidas do style.input_login */}
                         <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#D9D9D9', width: 302, height: 58, borderRadius: 10, paddingHorizontal: 15 }}>
                             <Feather name="lock" size={20} color="#666" style={{ marginRight: 10 }} />
-                            <TextInput 
-                                style={{ flex: 1, fontSize: 16, fontWeight: 'bold' }} 
+                            <TextInput
+                                style={{ flex: 1, fontSize: 16, fontWeight: 'bold' }}
                                 placeholder="Senha"
                                 value={this.state.senha}
                                 onChangeText={(texto) => this.setState({ senha: texto })}
-                                secureTextEntry={!this.state.mostrarSenha}
+                                secureTextEntry={!mostrarSenha}
                             />
                             <TouchableOpacity onPress={this.toggleMostrarSenha} style={{ padding: 5 }}>
-                                <Feather 
-                                    name={this.state.mostrarSenha ? "eye" : "eye-off"} 
-                                    size={22} 
-                                    color="#666" 
-                                />
+                                <Feather name={mostrarSenha ? "eye" : "eye-off"} size={22} color="#666" />
                             </TouchableOpacity>
                         </View>
                     </View>
 
-                    <View style={{flexDirection: 'column', gap: 20}}>
-                        <Pressable 
-                            style={[style.login_button, this.state.carregando && { opacity: 0.5 }]} 
+                    {/* Botões */}
+                    <View style={{ flexDirection: 'column', gap: 20, alignItems: 'center' }}>
+                        <Pressable
+                            style={[style.login_button, carregando && { opacity: 0.5 }]}
                             onPress={this.handleLogin}
-                            disabled={this.state.carregando}
+                            disabled={carregando}
                         >
-                            <Text style={{fontSize: 25, fontWeight: 'bold'}}>
-                                {this.state.carregando ? "Entrando..." : "Entrar"}
+                            <Text style={{ fontSize: 25, fontWeight: 'bold' }}>
+                                {carregando ? "Entrando..." : "Entrar"}
                             </Text>
                         </Pressable>
+
                         <Link href="/cadastro" asChild>
                             <Pressable style={style.login_button}>
-                                <Text style={{fontSize: 25, fontWeight: 'bold'}}>Cadastrar</Text>
+                                <Text style={{ fontSize: 25, fontWeight: 'bold' }}>Cadastrar</Text>
                             </Pressable>
                         </Link>
+
+                        {/* Botão de digital — aparece sempre que a biometria estiver ativa no storage */}
+                        {mostrarBotaoBiometria && (
+                            <TouchableOpacity
+                                onPress={this.handleLoginBiometrico}
+                                disabled={carregando}
+                                style={{
+                                    marginTop: 10,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: 64,
+                                    height: 64,
+                                    borderRadius: 32,
+                                    backgroundColor: '#FFF3E8',
+                                    borderWidth: 2,
+                                    borderColor: '#FF9D4D',
+                                    opacity: carregando ? 0.5 : 1,
+                                }}
+                            >
+                                <Feather name="aperture" size={30} color="#FF9D4D" />
+                            </TouchableOpacity>
+                        )}
                     </View>
+
                 </View>
             </ScrollView>
-        )
+        );
     }
 }

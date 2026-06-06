@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Modal, TouchableOpacity, StyleSheet, TextInput, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, StyleSheet, TextInput, ScrollView, Alert, ActivityIndicator, Switch } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
+import {
+    biometriaEstaAtiva,
+    ativarBiometria,
+    desativarBiometria,
+} from '../../api/biometriaService';
 
 interface ModalPerfilProps {
     visible: boolean;
@@ -12,7 +17,7 @@ interface ModalPerfilProps {
 export default function ModalPerfil({ visible, onClose }: ModalPerfilProps) {
     const [carregando, setCarregando] = useState(false);
     const [usuarioId, setUsuarioId] = useState<string | null>(null);
-    const [totalReceitasCriadas, setTotalReceitasCriadas] = useState(0); // Renomeei o state
+    const [totalReceitasCriadas, setTotalReceitasCriadas] = useState(0);
 
     const [nome, setNome] = useState('');
     const [editandoNome, setEditandoNome] = useState(false);
@@ -23,6 +28,11 @@ export default function ModalPerfil({ visible, onClose }: ModalPerfilProps) {
     const [restricoesAtuais, setRestricoesAtuais] = useState<string[]>([]);
     const [editandoRestricoes, setEditandoRestricoes] = useState(false);
 
+    // ─── Estados de biometria ──────────────────────────────────────────────────
+    // Sem checagem de hardware — a seção sempre aparece
+    const [biometriaAtiva, setBiometriaAtiva] = useState(false);
+    const [carregandoBiometria, setCarregandoBiometria] = useState(false);
+
     const opcoesHabilidade = ['Iniciante', 'Intermediário', 'Profissional'];
     const opcoesCulinaria = ['Japonesa', 'Italiana', 'Brasileira', 'Mexicana'];
     const opcoesRestricoes = ['Vegetariano', 'Vegano', 'Intolerante a Lactose', 'Alérgico a Amendoim', 'Alérgico a frutos do mar', 'Sem Glúten'];
@@ -30,6 +40,7 @@ export default function ModalPerfil({ visible, onClose }: ModalPerfilProps) {
     useEffect(() => {
         if (visible) {
             carregarDados();
+            verificarEstadoBiometria();
         } else {
             setEditandoNome(false);
             setEditandoCulinaria(false);
@@ -38,6 +49,65 @@ export default function ModalPerfil({ visible, onClose }: ModalPerfilProps) {
         }
     }, [visible]);
 
+    const verificarEstadoBiometria = async () => {
+        try {
+            const ativa = await biometriaEstaAtiva();
+            setBiometriaAtiva(ativa);
+        } catch (e) {
+            console.warn('Erro ao verificar biometria:', e);
+        }
+    };
+
+    const handleToggleBiometria = async (novoValor: boolean) => {
+        if (carregandoBiometria) return;
+        setCarregandoBiometria(true);
+
+        try {
+            if (novoValor) {
+                const email = await AsyncStorage.getItem('loginEmail');
+                const senha = await AsyncStorage.getItem('loginSenha');
+
+                if (!email || !senha) {
+                    Alert.alert(
+                        "Sessão expirada",
+                        "Faça logout e entre novamente com e-mail e senha para ativar a biometria.",
+                        [{ text: "Entendi" }]
+                    );
+                    return;
+                }
+
+                const sucesso = await ativarBiometria(email, senha);
+                if (sucesso) {
+                    setBiometriaAtiva(true);
+                    Alert.alert("✅ Biometria ativada!", "Agora você pode entrar com sua digital.");
+                } else {
+                    Alert.alert("Cancelado", "A autenticação biométrica foi cancelada ou não está disponível neste dispositivo.");
+                }
+            } else {
+                Alert.alert(
+                    "Desativar biometria",
+                    "Tem certeza que deseja desativar o acesso por digital?",
+                    [
+                        { text: "Cancelar", style: "cancel" },
+                        {
+                            text: "Desativar",
+                            style: "destructive",
+                            onPress: async () => {
+                                await desativarBiometria();
+                                setBiometriaAtiva(false);
+                            }
+                        }
+                    ]
+                );
+            }
+        } catch (e) {
+            Alert.alert("Erro", "Não foi possível configurar a biometria. Tente novamente.");
+            console.error('Erro no toggle de biometria:', e);
+        } finally {
+            setCarregandoBiometria(false);
+        }
+    };
+
     const carregarDados = async () => {
         setCarregando(true);
         try {
@@ -45,10 +115,7 @@ export default function ModalPerfil({ visible, onClose }: ModalPerfilProps) {
             if (!uid) return;
             setUsuarioId(uid);
 
-            // Fetch dados do perfil
             const respostaPerfil = fetch(`http://localhost:3000/api/perfil/${uid}`);
-            
-            // Fetch contando quantas receitas este usuário (autorId) criou
             const respostaReceitasCount = fetch(`http://localhost:3000/api/receitas/autor/${uid}/count`);
 
             const [resPerfil, resCount] = await Promise.all([respostaPerfil, respostaReceitasCount]);
@@ -63,7 +130,7 @@ export default function ModalPerfil({ visible, onClose }: ModalPerfilProps) {
 
             if (resCount.ok) {
                 const dadosCount = await resCount.json();
-                setTotalReceitasCriadas(dadosCount.total || 0); // Atualiza com contagem de CRIAÇÕES
+                setTotalReceitasCriadas(dadosCount.total || 0);
             }
 
         } catch (error) {
@@ -75,7 +142,6 @@ export default function ModalPerfil({ visible, onClose }: ModalPerfilProps) {
 
     const salvarCampoUnico = async (novoCampo: any) => {
         if (!usuarioId) return;
-
         try {
             const resposta = await fetch(`http://localhost:3000/api/perfil/${usuarioId}`, {
                 method: 'PUT',
@@ -88,11 +154,9 @@ export default function ModalPerfil({ visible, onClose }: ModalPerfilProps) {
                     ...novoCampo
                 }),
             });
-
             if (!resposta.ok) throw new Error("Falha na API");
-            
             if (novoCampo.hasOwnProperty('nome_usuario')) {
-                await AsyncStorage.setItem('usuarioNome', novoCampo.nome_usuario); 
+                await AsyncStorage.setItem('usuarioNome', novoCampo.nome_usuario);
             }
         } catch {
             Alert.alert("Erro", "Erro ao sincronizar essa alteração com o servidor.");
@@ -129,20 +193,21 @@ export default function ModalPerfil({ visible, onClose }: ModalPerfilProps) {
     const handleLogout = () => {
         Alert.alert("Sair", "Tem certeza que deseja sair da conta?", [
             { text: "Cancelar", style: "cancel" },
-            { 
-                text: "Sair", 
+            {
+                text: "Sair",
                 style: "destructive",
                 onPress: async () => {
                     await AsyncStorage.removeItem('usuarioId');
                     await AsyncStorage.removeItem('usuarioNome');
-                    onClose(); 
-                    router.replace('/'); 
+                    await AsyncStorage.removeItem('loginEmail');
+                    await AsyncStorage.removeItem('loginSenha');
+                    onClose();
+                    router.replace('/');
                 }
             }
         ]);
     };
 
-    // Navega e fecha o modal
     const navegarPara = (rota: any) => {
         onClose();
         router.push(rota);
@@ -164,10 +229,10 @@ export default function ModalPerfil({ visible, onClose }: ModalPerfilProps) {
                         <ActivityIndicator size="large" color="#FF9D4D" style={{ marginTop: 50 }} />
                     ) : (
                         <ScrollView contentContainerStyle={styles.drawerContent} showsVerticalScrollIndicator={false}>
-                            
+
                             {/* --- ESTATÍSTICAS --- */}
                             <View style={styles.estatisticasCard}>
-                                <FontAwesome5 name="book-open" size={24} color="#4A90E2" /> 
+                                <FontAwesome5 name="book-open" size={24} color="#4A90E2" />
                                 <View style={{ marginLeft: 15 }}>
                                     <Text style={styles.estatisticaValor}>{totalReceitasCriadas}</Text>
                                     <Text style={styles.estatisticaLabel}>Receitas Criadas</Text>
@@ -201,7 +266,7 @@ export default function ModalPerfil({ visible, onClose }: ModalPerfilProps) {
                             <Text style={styles.labelForm}>Culinária Favorita</Text>
                             {!editandoCulinaria ? (
                                 <View style={styles.readOnlyContainer}>
-                                    <Text style={[styles.readOnlyText, {textTransform: 'capitalize'}]}>{culinaria || "Nenhuma..."}</Text>
+                                    <Text style={[styles.readOnlyText, { textTransform: 'capitalize' }]}>{culinaria || "Nenhuma..."}</Text>
                                     <TouchableOpacity style={styles.btnEditarPequeno} onPress={() => setEditandoCulinaria(true)}>
                                         <FontAwesome5 name="pencil-alt" size={14} color="#666" />
                                     </TouchableOpacity>
@@ -223,7 +288,7 @@ export default function ModalPerfil({ visible, onClose }: ModalPerfilProps) {
                             <Text style={styles.labelForm}>Nível de Habilidade</Text>
                             {!editandoHabilidade ? (
                                 <View style={styles.readOnlyContainer}>
-                                    <Text style={[styles.readOnlyText, {textTransform: 'capitalize'}]}>{habilidade || "Não definido"}</Text>
+                                    <Text style={[styles.readOnlyText, { textTransform: 'capitalize' }]}>{habilidade || "Não definido"}</Text>
                                     <TouchableOpacity style={styles.btnEditarPequeno} onPress={() => setEditandoHabilidade(true)}>
                                         <FontAwesome5 name="pencil-alt" size={14} color="#666" />
                                     </TouchableOpacity>
@@ -258,8 +323,8 @@ export default function ModalPerfil({ visible, onClose }: ModalPerfilProps) {
                                         {opcoesRestricoes.map(restricao => {
                                             const ativo = restricoesAtuais.includes(restricao);
                                             return (
-                                                <TouchableOpacity 
-                                                    key={restricao} 
+                                                <TouchableOpacity
+                                                    key={restricao}
                                                     style={[styles.botaoOpcaoMini, ativo && styles.botaoOpcaoAtivo]}
                                                     onPress={() => handletoggleRestricaoTemp(restricao)}
                                                 >
@@ -268,8 +333,7 @@ export default function ModalPerfil({ visible, onClose }: ModalPerfilProps) {
                                             );
                                         })}
                                     </View>
-                                    
-                                    <View style={{flexDirection:'row', marginTop: 15, justifyContent: 'flex-end', gap: 10}}>
+                                    <View style={{ flexDirection: 'row', marginTop: 15, justifyContent: 'flex-end', gap: 10 }}>
                                         <TouchableOpacity style={styles.btnCancelarLista} onPress={() => { setEditandoRestricoes(false); carregarDados(); }}>
                                             <Text style={styles.textoCancelarLista}>Cancelar</Text>
                                         </TouchableOpacity>
@@ -279,6 +343,29 @@ export default function ModalPerfil({ visible, onClose }: ModalPerfilProps) {
                                     </View>
                                 </View>
                             )}
+
+                            {/* ─── SEÇÃO BIOMETRIA — sempre visível ─────────────────────────────── */}
+                            <Text style={styles.labelForm}>Segurança</Text>
+                            <View style={styles.biometriaCard}>
+                                <View style={styles.biometriaEsq}>
+                                    <View style={styles.biometriaIcone}>
+                                        <FontAwesome5 name="fingerprint" size={22} color={biometriaAtiva ? "#FF9D4D" : "#999"} />
+                                    </View>
+                                    <View>
+                                        <Text style={styles.biometriaTitulo}>Login por Digital</Text>
+                                        <Text style={styles.biometriaSubtitulo}>
+                                            {biometriaAtiva ? "Ativado" : "Desativado"}
+                                        </Text>
+                                    </View>
+                                </View>
+                                <Switch
+                                    value={biometriaAtiva}
+                                    onValueChange={handleToggleBiometria}
+                                    disabled={carregandoBiometria}
+                                    trackColor={{ false: '#e0e0e0', true: '#FFD4A8' }}
+                                    thumbColor={biometriaAtiva ? '#FF9D4D' : '#bbb'}
+                                />
+                            </View>
 
                             {/* --- NAVEGAÇÃO INTERNA DO PERFIL --- */}
                             <View style={styles.navMenu}>
@@ -290,7 +377,7 @@ export default function ModalPerfil({ visible, onClose }: ModalPerfilProps) {
                                     </View>
                                     <FontAwesome5 name="chevron-right" size={14} color="#ccc" />
                                 </TouchableOpacity>
-                                
+
                                 <TouchableOpacity style={styles.navItem} onPress={() => navegarPara('/historico')}>
                                     <View style={styles.navItemEsq}>
                                         <FontAwesome5 name="history" size={18} color="#4A90E2" />
@@ -299,14 +386,14 @@ export default function ModalPerfil({ visible, onClose }: ModalPerfilProps) {
                                     <FontAwesome5 name="chevron-right" size={14} color="#ccc" />
                                 </TouchableOpacity>
                             </View>
-                            
-                            <View style={{ height: 40 }} /> 
+
+                            <View style={{ height: 40 }} />
                         </ScrollView>
                     )}
 
                     <View style={styles.drawerFooter}>
                         <TouchableOpacity style={styles.botaoSair} onPress={handleLogout}>
-                            <FontAwesome5 name="sign-out-alt" size={16} color="#FFF" style={{marginRight: 10}} />
+                            <FontAwesome5 name="sign-out-alt" size={16} color="#FFF" style={{ marginRight: 10 }} />
                             <Text style={styles.textoBotaoSair}>Sair da Conta</Text>
                         </TouchableOpacity>
                     </View>
@@ -320,8 +407,8 @@ export default function ModalPerfil({ visible, onClose }: ModalPerfilProps) {
 const styles = StyleSheet.create({
     overlay: { flex: 1, flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
     backgroundClose: { flex: 1 },
-    drawerContainer: { width: '82%', maxWidth: 350, backgroundColor: '#fff', height: '100%', elevation: 15 }, 
-    
+    drawerContainer: { width: '82%', maxWidth: 350, backgroundColor: '#fff', height: '100%', elevation: 15 },
+
     drawerHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#eee', backgroundColor: '#fafafa' },
     drawerTitle: { fontSize: 20, fontWeight: 'bold' },
     drawerContent: { padding: 20 },
@@ -329,9 +416,9 @@ const styles = StyleSheet.create({
     estatisticasCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f0f8ff', padding: 15, borderRadius: 10, borderWidth: 1, borderColor: '#cae6ff', marginBottom: 10 },
     estatisticaValor: { fontSize: 22, fontWeight: 'bold', color: '#333' },
     estatisticaLabel: { fontSize: 13, color: '#666', fontWeight: '500' },
-    
+
     labelForm: { fontSize: 13, fontWeight: 'bold', color: '#888', marginTop: 20, marginBottom: 5, textTransform: 'uppercase' },
-    
+
     readOnlyContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f9f9f9', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#eee' },
     readOnlyText: { fontSize: 16, color: '#333', flex: 1, marginRight: 10, lineHeight: 22 },
     btnEditarPequeno: { padding: 5 },
@@ -354,6 +441,12 @@ const styles = StyleSheet.create({
     botaoOpcaoAtivo: { backgroundColor: '#FF9D4D', borderColor: '#FF9D4D' },
     textoOpcao: { color: '#555', fontWeight: '500', textAlign: 'center' },
     textoOpcaoAtivo: { color: '#fff', fontWeight: 'bold' },
+
+    biometriaCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#f9f9f9', padding: 14, borderRadius: 10, borderWidth: 1, borderColor: '#eee' },
+    biometriaEsq: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    biometriaIcone: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFF3E8', alignItems: 'center', justifyContent: 'center' },
+    biometriaTitulo: { fontSize: 15, fontWeight: '600', color: '#333' },
+    biometriaSubtitulo: { fontSize: 12, color: '#999', marginTop: 2 },
 
     navMenu: { marginTop: 15, borderTopWidth: 1, borderTopColor: '#f0f0f0', paddingTop: 10 },
     navItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 15, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f9f9f9' },
