@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View, Text, Modal, Pressable, ScrollView, Image, StyleSheet, Share, Alert } from 'react-native';
+import { View, Text, Modal, Pressable, ScrollView, Image, StyleSheet, Share, Alert, Platform } from 'react-native';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import Entypo from '@expo/vector-icons/Entypo';
@@ -105,42 +105,88 @@ export default class ExibirReceita extends Component<Props> {
         try {
             const { receita } = this.props;
             if (!receita) return;
+
             const ingredientes = receita.ingredientes || [];
             const modoPreparo = receita.modoPreparo || [];
 
             const htmlContent = `
-                <html><head><meta charset="utf-8">
-                <style>
-                    body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
-                    h1 { color: #FF9D4D; } h2 { color: #555; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-                    li { margin-bottom: 6px; } .timer { color: #FF9D4D; font-size: 12px; }
-                </style></head><body>
-                <h1>${receita.nome}</h1>
-                <p>${receita.descricao || ''}</p>
-                <p><strong>Tempo:</strong> ${receita.tempoPreparo} min &nbsp;|&nbsp;
-                   <strong>Nível:</strong> ${receita.nivelHabilidade} &nbsp;|&nbsp;
-                   <strong>Culinária:</strong> ${receita.tipoCulinaria}</p>
-                <h2>Ingredientes</h2>
-                <ul>${ingredientes.map((ing: any) => `<li>${ing.nome}${ing.quantidade ? ' - ' + ing.quantidade : ''}</li>`).join('')}</ul>
-                <h2>Modo de Preparo</h2>
-                <ol>${modoPreparo.map((passo: any) => {
-                    const texto = typeof passo === 'string' ? passo : passo.texto;
-                    const timer = typeof passo === 'object' && passo.timerMinutos ? ` <span class="timer">⏱ ${passo.timerMinutos} min</span>` : '';
-                    return `<li>${texto}${timer}</li>`;
-                }).join('')}</ol>
-                </body></html>`;
+                <html>
+                    <head>
+                        <meta charset="utf-8">
+                        <style>
+                            body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+                            h1 { color: #FF9D4D; }
+                            h2 { color: #555; margin-top: 20px; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+                            li { margin-bottom: 8px; line-height: 1.5; }
+                            .info { background: #f5f5f5; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+                        </style>
+                    </head>
+                    <body>
+                        <h1>${receita.nome}</h1>
+                        <div class="info">
+                            <p><strong>Tempo de preparo:</strong> ${receita.tempoPreparo} minutos</p>
+                            <p><strong>Dificuldade:</strong> ${receita.nivelHabilidade}</p>
+                            <p><strong>Tipo de Culinária:</strong> ${receita.tipoCulinaria}</p>
+                            <p><em>${receita.descricao || ''}</em></p>
+                        </div>
+                        <h2>Ingredientes</h2>
+                        <ul>
+                            ${ingredientes.map((i: any) => `<li>${i.nome} ${i.quantidade ? `- ${i.quantidade}` : ''}</li>`).join('')}
+                        </ul>
+                        <h2>Modo de Preparo</h2>
+                        <ol>
+                            ${modoPreparo.map((m: any) => `<li>${typeof m === 'string' ? m : m.texto}</li>`).join('')}                        </ol>
+                    </body>
+                </html>
+            `;
 
-            const { uri } = await Print.printToFileAsync({ html: htmlContent });
-            const novoCaminho = `${FileSystem.documentDirectory}${receita.nome.replace(/\s+/g, '_')}.pdf`;
-            await FileSystem.moveAsync({ from: uri, to: novoCaminho });
-            if (await Sharing.isAvailableAsync()) {
-                await Sharing.shareAsync(novoCaminho, { mimeType: 'application/pdf' });
+            const { uri: tempUri } = await Print.printToFileAsync({
+                html: htmlContent,
+                base64: false,
+            });
+
+            const nomeArquivo = `${receita.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9 ]/g, '').trim().replace(/\s+/g, '_')}.pdf`;
+
+            if (Platform.OS === 'android') {
+                const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync(
+                    FileSystem.StorageAccessFramework.getUriForDirectoryInRoot('Download')
+                );
+
+                if (!permissions.granted) {
+                    Alert.alert("Permissão negada", "Não foi possível acessar a pasta de Downloads.");
+                    return;
+                }
+
+                const base64 = await FileSystem.readAsStringAsync(tempUri, {
+                    encoding: FileSystem.EncodingType.Base64,
+                });
+
+                const destUri = await FileSystem.StorageAccessFramework.createFileAsync(
+                    permissions.directoryUri,
+                    nomeArquivo,
+                    'application/pdf'
+                );
+
+                await FileSystem.writeAsStringAsync(destUri, base64, {
+                    encoding: FileSystem.EncodingType.Base64,
+                });
+
+                Alert.alert("Download concluído!", `A receita foi salva como "${nomeArquivo}" na pasta escolhida.`);
             } else {
-                Alert.alert("PDF salvo", `Arquivo em: ${novoCaminho}`);
+                const destUri = `${FileSystem.documentDirectory}${nomeArquivo}`;
+                await FileSystem.copyAsync({ from: tempUri, to: destUri });
+
+                await Sharing.shareAsync(destUri, {
+                    mimeType: 'application/pdf',
+                    dialogTitle: 'Salvar Receita',
+                    UTI: 'com.adobe.pdf',
+                });
             }
-        } catch (error) {
-            console.error("Erro ao gerar PDF:", error);
-            Alert.alert("Erro", "Não foi possível gerar o PDF.");
+
+            await FileSystem.deleteAsync(tempUri, { idempotent: true });
+
+        } catch {
+            Alert.alert("Erro", "Não foi possível salvar a receita.");
         }
     };
 
