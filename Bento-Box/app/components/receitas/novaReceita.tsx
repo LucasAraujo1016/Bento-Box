@@ -12,6 +12,12 @@ interface Props {
     autorNome: string;
 }
 
+// Cada passo do modo de preparo agora carrega um timer opcional (em minutos)
+interface PassoPreparo {
+    texto: string;
+    timerMinutos: number | null;
+}
+
 interface State {
     nome: string;
     imagem: string | null;
@@ -21,13 +27,13 @@ interface State {
     tipoCulinaria: string;
     restricoes: string[];
     ingredientes: Ingrediente[];
-    modoPreparo: string[];
-    
+    modoPreparo: PassoPreparo[];
+
     isAddingIngrediente: boolean;
     novoIngredienteNome: string;
     novoIngredienteQuantidade: string;
     novoIngredienteUnidade: string;
-    
+
     indexEdicaoIngrediente: number | null;
     edicaoIngredienteNome: string;
     edicaoIngredienteQuantidade: string;
@@ -35,8 +41,10 @@ interface State {
 
     isAddingModo: boolean;
     novoModo: string;
+    novoModoTimer: string;          // campo de minutos do novo passo
     indexEdicaoModo: number | null;
     textoEdicaoModo: string;
+    timerEdicaoModo: string;        // campo de minutos na edição
 }
 
 interface Ingrediente {
@@ -66,8 +74,10 @@ export default class NovaReceita extends Component<Props, State> {
         edicaoIngredienteUnidade: 'unidades',
         isAddingModo: false,
         novoModo: '',
+        novoModoTimer: '',
         indexEdicaoModo: null,
         textoEdicaoModo: '',
+        timerEdicaoModo: '',
     };
 
     componentDidUpdate(prevProps: Props) {
@@ -97,8 +107,10 @@ export default class NovaReceita extends Component<Props, State> {
             edicaoIngredienteUnidade: 'unidades',
             isAddingModo: false,
             novoModo: '',
+            novoModoTimer: '',
             indexEdicaoModo: null,
             textoEdicaoModo: '',
+            timerEdicaoModo: '',
         });
     }
 
@@ -117,11 +129,10 @@ export default class NovaReceita extends Component<Props, State> {
     abrirGaleria = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ['images'],
-            allowsEditing: false, 
-            quality: 0.5, 
-            base64: true, 
+            allowsEditing: false,
+            quality: 0.5,
+            base64: true,
         });
-
         if (!result.canceled) {
             this.setState({ imagem: `data:image/jpeg;base64,${result.assets[0].base64}` });
         }
@@ -133,14 +144,12 @@ export default class NovaReceita extends Component<Props, State> {
             Alert.alert("Permissão Negada", "Precisamos de permissão para acessar a câmera.");
             return;
         }
-
         let result = await ImagePicker.launchCameraAsync({
             mediaTypes: ['images'],
             allowsEditing: false,
-            quality: 0.5, 
+            quality: 0.5,
             base64: true,
         });
-
         if (!result.canceled) {
             this.setState({ imagem: `data:image/jpeg;base64,${result.assets[0].base64}` });
         }
@@ -155,27 +164,17 @@ export default class NovaReceita extends Component<Props, State> {
         }
     }
 
-    validarFormatoIngrediente = (texto: string) => {
-        if (!texto.includes('-')) {
-            Alert.alert(
-                "Formato Inválido", 
-                "O ingrediente deve estar no formato: 'Nome - Quantidade'. \n\nExemplo: Ovos - 2 unidades"
-            );
-            return false;
-        }
-        return true;
-    }
+    // ── Ingredientes ────────────────────────────────────────────────────────────
 
     salvarIngrediente = () => {
         const nome = this.state.novoIngredienteNome.trim();
         const quantidade = this.state.novoIngredienteQuantidade.trim();
-        
         if (nome !== '' && quantidade !== '') {
             this.setState(prevState => ({
-                ingredientes: [...prevState.ingredientes, { 
-                    nome, 
-                    quantidade, 
-                    unidade: this.state.novoIngredienteUnidade 
+                ingredientes: [...prevState.ingredientes, {
+                    nome,
+                    quantidade,
+                    unidade: this.state.novoIngredienteUnidade
                 }],
                 isAddingIngrediente: false,
                 novoIngredienteNome: '',
@@ -186,11 +185,11 @@ export default class NovaReceita extends Component<Props, State> {
             Alert.alert("Atenção", "Preencha o nome e a quantidade do ingrediente.");
         }
     }
-    
+
     iniciarEdicaoIngrediente = (index: number) => {
         const item = this.state.ingredientes[index];
-        this.setState({ 
-            indexEdicaoIngrediente: index, 
+        this.setState({
+            indexEdicaoIngrediente: index,
             edicaoIngredienteNome: item.nome,
             edicaoIngredienteQuantidade: item.quantidade,
             edicaoIngredienteUnidade: item.unidade
@@ -200,17 +199,16 @@ export default class NovaReceita extends Component<Props, State> {
     salvarEdicaoIngrediente = () => {
         const nome = this.state.edicaoIngredienteNome.trim();
         const quantidade = this.state.edicaoIngredienteQuantidade.trim();
-
         if (nome !== '' && quantidade !== '') {
             const listaAtualizada = [...this.state.ingredientes];
-            listaAtualizada[this.state.indexEdicaoIngrediente as number] = { 
-                nome, 
-                quantidade, 
-                unidade: this.state.edicaoIngredienteUnidade 
+            listaAtualizada[this.state.indexEdicaoIngrediente as number] = {
+                nome,
+                quantidade,
+                unidade: this.state.edicaoIngredienteUnidade
             };
-            this.setState({ 
-                ingredientes: listaAtualizada, 
-                indexEdicaoIngrediente: null, 
+            this.setState({
+                ingredientes: listaAtualizada,
+                indexEdicaoIngrediente: null,
                 edicaoIngredienteNome: '',
                 edicaoIngredienteQuantidade: '',
                 edicaoIngredienteUnidade: 'unidades'
@@ -224,42 +222,56 @@ export default class NovaReceita extends Component<Props, State> {
         this.setState({ ingredientes: lista });
     }
 
+    // ── Modo de Preparo ─────────────────────────────────────────────────────────
+
+    /** Converte o texto do campo timer para number | null */
+    private _parseTimer = (valor: string): number | null => {
+        const n = parseInt(valor.trim(), 10);
+        return (!isNaN(n) && n > 0) ? n : null;
+    }
+
     salvarModo = () => {
         const texto = this.state.novoModo.trim();
-        if (texto !== '') {
-            this.setState(prevState => ({
-                modoPreparo: [...prevState.modoPreparo, texto],
-                isAddingModo: false,
-                novoModo: ''
-            }));
-        }
+        if (texto === '') return;
+        const timerMinutos = this._parseTimer(this.state.novoModoTimer);
+        this.setState(prevState => ({
+            modoPreparo: [...prevState.modoPreparo, { texto, timerMinutos }],
+            isAddingModo: false,
+            novoModo: '',
+            novoModoTimer: '',
+        }));
     }
 
     iniciarEdicaoModo = (index: number) => {
-        this.setState({ 
-            indexEdicaoModo: index, 
-            textoEdicaoModo: this.state.modoPreparo[index] 
+        const passo = this.state.modoPreparo[index];
+        this.setState({
+            indexEdicaoModo: index,
+            textoEdicaoModo: passo.texto,
+            timerEdicaoModo: passo.timerMinutos !== null ? String(passo.timerMinutos) : '',
         });
     }
 
     salvarEdicaoModo = () => {
         const texto = this.state.textoEdicaoModo.trim();
-        if (texto !== '') {
-            const listaAtualizada = [...this.state.modoPreparo];
-            listaAtualizada[this.state.indexEdicaoModo as number] = texto;
-            this.setState({ 
-                modoPreparo: listaAtualizada, 
-                indexEdicaoModo: null, 
-                textoEdicaoModo: '' 
-            });
-        }
+        if (texto === '') return;
+        const timerMinutos = this._parseTimer(this.state.timerEdicaoModo);
+        const listaAtualizada = [...this.state.modoPreparo];
+        listaAtualizada[this.state.indexEdicaoModo as number] = { texto, timerMinutos };
+        this.setState({
+            modoPreparo: listaAtualizada,
+            indexEdicaoModo: null,
+            textoEdicaoModo: '',
+            timerEdicaoModo: '',
+        });
     }
-    
+
     removerModo = (index: number) => {
         const lista = [...this.state.modoPreparo];
         lista.splice(index, 1);
         this.setState({ modoPreparo: lista });
     }
+
+    // ── Salvar receita ──────────────────────────────────────────────────────────
 
     salvarReceita = async () => {
         if (!this.state.nome || !this.state.tempoPreparo || !this.state.nivelHabilidade || !this.state.tipoCulinaria) {
@@ -282,17 +294,16 @@ export default class NovaReceita extends Component<Props, State> {
             return;
         }
 
-        if (this.state.isAddingIngrediente && (this.state.novoIngredienteNome.trim() !== '' || this.state.novoIngredienteQuantidade.trim() !== '')) {
+        if (this.state.isAddingIngrediente &&
+            (this.state.novoIngredienteNome.trim() !== '' || this.state.novoIngredienteQuantidade.trim() !== '')) {
             Alert.alert("Atenção", "Você esqueceu de confirmar o ingrediente que estava digitando.");
             return;
         }
 
-        const ingredientesFormatados = this.state.ingredientes.map(item => {
-            return {
-                nome: item.nome,
-                quantidade: `${item.quantidade} ${item.unidade}`
-            };
-        });
+        const ingredientesFormatados = this.state.ingredientes.map(item => ({
+            nome: item.nome,
+            quantidade: `${item.quantidade} ${item.unidade}`
+        }));
 
         const receitaNova = {
             autorId: this.props.autorId,
@@ -300,16 +311,16 @@ export default class NovaReceita extends Component<Props, State> {
             nome: this.state.nome.trim(),
             imagem: this.state.imagem || "",
             descricao: this.state.descricao.trim(),
-            tempoPreparo: tempoNumber, 
+            tempoPreparo: tempoNumber,
             nivelHabilidade: this.state.nivelHabilidade,
             tipoCulinaria: this.state.tipoCulinaria,
             restricoes: this.state.restricoes,
             ingredientes: ingredientesFormatados,
-            modoPreparo: this.state.modoPreparo
+            modoPreparo: this.state.modoPreparo,   // array de { texto, timerMinutos }
         };
 
         try {
-            const resposta = await fetch("http://localhost:3000/api/receitas", { 
+            const resposta = await fetch("http://localhost:3000/api/receitas", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(receitaNova)
@@ -317,7 +328,7 @@ export default class NovaReceita extends Component<Props, State> {
 
             if (resposta.ok) {
                 Alert.alert("Sucesso", "Receita postada com sucesso!");
-                this.props.onClose(); 
+                this.props.onClose();
             } else {
                 const erro = await resposta.json();
                 Alert.alert("Erro do Servidor", "Não foi possível salvar: " + erro.message);
@@ -328,7 +339,9 @@ export default class NovaReceita extends Component<Props, State> {
         }
     }
 
-    render (){
+    // ── Render ──────────────────────────────────────────────────────────────────
+
+    render() {
         const opcoesDeRestricao = ["Vegetariano", "Vegano", "Intolerante a Lactose", "Alérgico a Amendoim", "Alérgico a frutos do mar", "Sem Glúten"];
 
         return (
@@ -343,9 +356,10 @@ export default class NovaReceita extends Component<Props, State> {
                         <Text style={style.modalTitulo}>Criar Nova Receita</Text>
 
                         <ScrollView showsVerticalScrollIndicator={false}>
+                            {/* Imagem */}
                             <Text style={style.label}>Imagem da Receita</Text>
-                            <Pressable 
-                                style={[style.modalInput, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#e0e0e0' }]} 
+                            <Pressable
+                                style={[style.modalInput, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#e0e0e0' }]}
                                 onPress={this.selecionarImagem}
                             >
                                 {this.state.imagem ? (
@@ -355,23 +369,27 @@ export default class NovaReceita extends Component<Props, State> {
                                 )}
                             </Pressable>
 
+                            {/* Nome */}
                             <Text style={style.label}>Nome da Receita *</Text>
-                            <TextInput style={style.modalInput} placeholder="Ex: Bolo de Cenoura" 
+                            <TextInput style={style.modalInput} placeholder="Ex: Bolo de Cenoura"
                                 value={this.state.nome} onChangeText={(text) => this.setState({ nome: text })} />
 
+                            {/* Descrição */}
                             <Text style={style.label}>Descrição *</Text>
                             <TextInput style={[style.modalInput, { height: 80 }]} placeholder="Breve descrição do prato" multiline={true}
                                 value={this.state.descricao} onChangeText={(text) => this.setState({ descricao: text })} />
 
-                            <Text style={style.label}>Tempo de Preparo (minutos) *</Text>
+                            {/* Tempo total */}
+                            <Text style={style.label}>Tempo de Preparo Total (minutos) *</Text>
                             <TextInput style={style.modalInput} placeholder="Ex: 45" keyboardType="numeric"
                                 value={this.state.tempoPreparo} onChangeText={(text) => this.setState({ tempoPreparo: text })} />
 
+                            {/* Nível de habilidade */}
                             <Text style={style.label}>Nível de Habilidade *</Text>
-                            <View style={[style.modalInput, { padding: 0, justifyContent: 'center' }]}> 
+                            <View style={[style.modalInput, { padding: 0, justifyContent: 'center' }]}>
                                 <Picker
                                     selectedValue={this.state.nivelHabilidade}
-                                    onValueChange={(itemValue) => this.setState({nivelHabilidade: itemValue})}
+                                    onValueChange={(itemValue) => this.setState({ nivelHabilidade: itemValue })}
                                 >
                                     <Picker.Item label="Selecione..." value="" />
                                     <Picker.Item label="Iniciante" value="iniciante" />
@@ -380,11 +398,12 @@ export default class NovaReceita extends Component<Props, State> {
                                 </Picker>
                             </View>
 
+                            {/* Tipo de culinária */}
                             <Text style={style.label}>Tipo de Culinária *</Text>
-                            <View style={[style.modalInput, { padding: 0, justifyContent: 'center' }]}> 
+                            <View style={[style.modalInput, { padding: 0, justifyContent: 'center' }]}>
                                 <Picker
                                     selectedValue={this.state.tipoCulinaria}
-                                    onValueChange={(itemValue) => this.setState({tipoCulinaria: itemValue})}
+                                    onValueChange={(itemValue) => this.setState({ tipoCulinaria: itemValue })}
                                 >
                                     <Picker.Item label="Selecione..." value="" />
                                     <Picker.Item label="Japonesa" value="japonesa" />
@@ -394,8 +413,9 @@ export default class NovaReceita extends Component<Props, State> {
                                 </Picker>
                             </View>
 
+                            {/* Restrições */}
                             <Text style={style.label}>Restrições</Text>
-                            <View style={{flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 15}}>
+                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 15 }}>
                                 {opcoesDeRestricao.map((item) => {
                                     const estaSelecionado = this.state.restricoes.includes(item);
                                     return (
@@ -403,43 +423,45 @@ export default class NovaReceita extends Component<Props, State> {
                                             key={item}
                                             onPress={() => this.toggleRestricao(item)}
                                             style={{
-                                                paddingHorizontal: 15, paddingVertical: 10, borderRadius: 20, borderWidth: 1, borderColor: '#FF9D4D',
-                                                backgroundColor: estaSelecionado ? '#FF9D4D' : 'transparent', 
+                                                paddingHorizontal: 15, paddingVertical: 10, borderRadius: 20,
+                                                borderWidth: 1, borderColor: '#FF9D4D',
+                                                backgroundColor: estaSelecionado ? '#FF9D4D' : 'transparent',
                                             }}
                                         >
                                             <Text style={{ color: estaSelecionado ? '#FFF' : '#333', fontWeight: 'bold', fontSize: 12 }}>
                                                 {item}
                                             </Text>
                                         </Pressable>
-                                    )
+                                    );
                                 })}
                             </View>
 
+                            {/* Ingredientes */}
                             <Text style={style.label}>Ingredientes *</Text>
                             <View style={[style.modalInput, { paddingVertical: 10 }]}>
                                 {this.state.ingredientes.map((item, index) => (
                                     <View key={index} style={{ marginBottom: 8, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: '#ddd' }}>
                                         {this.state.indexEdicaoIngrediente === index ? (
-                                            <View style={{flexDirection: 'column', gap: 5}}>
-                                                <TextInput 
-                                                    style={{backgroundColor: '#fff', padding: 8, borderRadius: 5, borderWidth: 1, borderColor: '#eee'}}
+                                            <View style={{ flexDirection: 'column', gap: 5 }}>
+                                                <TextInput
+                                                    style={{ backgroundColor: '#fff', padding: 8, borderRadius: 5, borderWidth: 1, borderColor: '#eee' }}
                                                     placeholder="Nome. Ex: Ovo"
                                                     value={this.state.edicaoIngredienteNome}
                                                     onChangeText={(t) => this.setState({ edicaoIngredienteNome: t })}
                                                 />
-                                                <View style={{flexDirection: 'row', gap: 5}}>
-                                                    <TextInput 
-                                                        style={{flex: 1, backgroundColor: '#fff', padding: 8, borderRadius: 5, borderWidth: 1, borderColor: '#eee', height: 50}}
+                                                <View style={{ flexDirection: 'row', gap: 5 }}>
+                                                    <TextInput
+                                                        style={{ flex: 1, backgroundColor: '#fff', padding: 8, borderRadius: 5, borderWidth: 1, borderColor: '#eee', height: 50 }}
                                                         placeholder="Qtd. Ex: 3"
                                                         value={this.state.edicaoIngredienteQuantidade}
                                                         onChangeText={(t) => this.setState({ edicaoIngredienteQuantidade: t })}
                                                         keyboardType="numeric"
                                                     />
-                                                    <View style={{flex: 1.8, backgroundColor: '#fff', borderRadius: 5, borderWidth: 1, borderColor: '#eee', justifyContent: 'center', height: 50, overflow: 'hidden'}}>
+                                                    <View style={{ flex: 1.8, backgroundColor: '#fff', borderRadius: 5, borderWidth: 1, borderColor: '#eee', justifyContent: 'center', height: 50, overflow: 'hidden' }}>
                                                         <Picker
                                                             selectedValue={this.state.edicaoIngredienteUnidade}
-                                                            onValueChange={(val) => this.setState({edicaoIngredienteUnidade: val})}
-                                                            style={{height: 50, width: '100%'}}
+                                                            onValueChange={(val) => this.setState({ edicaoIngredienteUnidade: val })}
+                                                            style={{ height: 50, width: '100%' }}
                                                         >
                                                             <Picker.Item label="Unidades" value="unidades" />
                                                             <Picker.Item label="Gramas (g)" value="g" />
@@ -452,19 +474,19 @@ export default class NovaReceita extends Component<Props, State> {
                                                         </Picker>
                                                     </View>
                                                 </View>
-                                                <View style={{flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 5}}>
-                                                    <Pressable onPress={this.salvarEdicaoIngrediente} style={{padding: 5}}>
+                                                <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 5 }}>
+                                                    <Pressable onPress={this.salvarEdicaoIngrediente} style={{ padding: 5 }}>
                                                         <AntDesign name="check-circle" size={24} color="#4CAF50" />
                                                     </Pressable>
-                                                    <Pressable onPress={() => this.setState({ indexEdicaoIngrediente: null })} style={{padding: 5}}>
+                                                    <Pressable onPress={() => this.setState({ indexEdicaoIngrediente: null })} style={{ padding: 5 }}>
                                                         <AntDesign name="close-circle" size={24} color="#999" />
                                                     </Pressable>
                                                 </View>
                                             </View>
                                         ) : (
-                                            <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
-                                                <Text style={{color: '#333', flex: 1}}>• {item.nome} - {item.quantidade} {item.unidade}</Text>
-                                                <View style={{flexDirection: 'row', alignItems: 'center', gap: 15}}>
+                                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <Text style={{ color: '#333', flex: 1 }}>• {item.nome} - {item.quantidade} {item.unidade}</Text>
+                                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
                                                     <Pressable onPress={() => this.iniciarEdicaoIngrediente(index)}>
                                                         <AntDesign name="edit" size={18} color="#007AFF" />
                                                     </Pressable>
@@ -478,27 +500,27 @@ export default class NovaReceita extends Component<Props, State> {
                                 ))}
 
                                 {this.state.isAddingIngrediente ? (
-                                    <View style={{flexDirection: 'column', gap: 5, marginTop: 5}}>
-                                        <TextInput 
-                                            style={{backgroundColor: '#fff', padding: 8, borderRadius: 5, borderWidth: 1, borderColor: '#eee'}} 
+                                    <View style={{ flexDirection: 'column', gap: 5, marginTop: 5 }}>
+                                        <TextInput
+                                            style={{ backgroundColor: '#fff', padding: 8, borderRadius: 5, borderWidth: 1, borderColor: '#eee' }}
                                             placeholder="Nome do Ingrediente. Ex: Ovo"
                                             value={this.state.novoIngredienteNome}
                                             onChangeText={(t) => this.setState({ novoIngredienteNome: t })}
                                             autoFocus
                                         />
-                                        <View style={{flexDirection: 'row', gap: 5}}>
-                                            <TextInput 
-                                                style={{flex: 1, backgroundColor: '#fff', padding: 8, borderRadius: 5, borderWidth: 1, borderColor: '#eee', height: 50}} 
+                                        <View style={{ flexDirection: 'row', gap: 5 }}>
+                                            <TextInput
+                                                style={{ flex: 1, backgroundColor: '#fff', padding: 8, borderRadius: 5, borderWidth: 1, borderColor: '#eee', height: 50 }}
                                                 placeholder="Qtd. Ex: 3"
                                                 value={this.state.novoIngredienteQuantidade}
                                                 onChangeText={(t) => this.setState({ novoIngredienteQuantidade: t })}
                                                 keyboardType="numeric"
                                             />
-                                            <View style={{flex: 1.8, backgroundColor: '#fff', borderRadius: 5, borderWidth: 1, borderColor: '#eee', justifyContent: 'center', height: 50, overflow: 'hidden'}}>
+                                            <View style={{ flex: 1.8, backgroundColor: '#fff', borderRadius: 5, borderWidth: 1, borderColor: '#eee', justifyContent: 'center', height: 50, overflow: 'hidden' }}>
                                                 <Picker
                                                     selectedValue={this.state.novoIngredienteUnidade}
-                                                    onValueChange={(val) => this.setState({novoIngredienteUnidade: val})}
-                                                    style={{height: 50, width: '100%'}}
+                                                    onValueChange={(val) => this.setState({ novoIngredienteUnidade: val })}
+                                                    style={{ height: 50, width: '100%' }}
                                                 >
                                                     <Picker.Item label="Unidades" value="unidades" />
                                                     <Picker.Item label="Gramas (g)" value="g" />
@@ -511,45 +533,74 @@ export default class NovaReceita extends Component<Props, State> {
                                                 </Picker>
                                             </View>
                                         </View>
-                                        <View style={{flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 5}}>
-                                            <Pressable onPress={this.salvarIngrediente} style={{padding: 5}}>
+                                        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 5 }}>
+                                            <Pressable onPress={this.salvarIngrediente} style={{ padding: 5 }}>
                                                 <AntDesign name="check-circle" size={24} color="#4CAF50" />
                                             </Pressable>
-                                            <Pressable onPress={() => this.setState({ isAddingIngrediente: false, novoIngredienteNome: '', novoIngredienteQuantidade: '' })} style={{padding: 5}}>
+                                            <Pressable onPress={() => this.setState({ isAddingIngrediente: false, novoIngredienteNome: '', novoIngredienteQuantidade: '' })} style={{ padding: 5 }}>
                                                 <AntDesign name="close-circle" size={24} color="#F44336" />
                                             </Pressable>
                                         </View>
                                     </View>
                                 ) : (
-                                    <Pressable onPress={() => this.setState({ isAddingIngrediente: true })} style={{alignItems: 'center', marginTop: 5, paddingVertical: 10}}>
-                                        <Text style={{color: '#FF9D4D', fontWeight: 'bold'}}>+ Adicionar Ingrediente</Text>
+                                    <Pressable onPress={() => this.setState({ isAddingIngrediente: true })} style={{ alignItems: 'center', marginTop: 5, paddingVertical: 10 }}>
+                                        <Text style={{ color: '#FF9D4D', fontWeight: 'bold' }}>+ Adicionar Ingrediente</Text>
                                     </Pressable>
                                 )}
                             </View>
 
+                            {/* ── Modo de Preparo ── */}
                             <Text style={style.label}>Modo de Preparo *</Text>
                             <View style={[style.modalInput, { paddingVertical: 10 }]}>
-                                {this.state.modoPreparo.map((item, index) => (
+                                {this.state.modoPreparo.map((passo, index) => (
                                     <View key={index} style={{ marginBottom: 8, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: '#ddd' }}>
                                         {this.state.indexEdicaoModo === index ? (
-                                            <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                                                <TextInput 
-                                                    style={{flex: 1, backgroundColor: '#fff', padding: 8, borderRadius: 5, borderWidth: 1, borderColor: '#eee'}}
+                                            /* ── Formulário de edição ── */
+                                            <View style={{ gap: 6 }}>
+                                                <TextInput
+                                                    style={{ backgroundColor: '#fff', padding: 8, borderRadius: 5, borderWidth: 1, borderColor: '#eee' }}
                                                     value={this.state.textoEdicaoModo}
                                                     onChangeText={(t) => this.setState({ textoEdicaoModo: t })}
                                                     multiline autoFocus
                                                 />
-                                                <Pressable onPress={this.salvarEdicaoModo} style={{marginLeft: 10}}>
-                                                    <AntDesign name="check-circle" size={22} color="#4CAF50" />
-                                                </Pressable>
-                                                <Pressable onPress={() => this.setState({ indexEdicaoModo: null })} style={{marginLeft: 10}}>
-                                                    <AntDesign name="close-circle" size={22} color="#999" />
-                                                </Pressable>
+                                                {/* Timer opcional na edição */}
+                                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                                    <AntDesign name="clock-circle" size={14} color="#FF9D4D" />
+                                                    <TextInput
+                                                        style={{ width: 70, backgroundColor: '#fff', padding: 6, borderRadius: 5, borderWidth: 1, borderColor: '#eee', textAlign: 'center' }}
+                                                        placeholder="min"
+                                                        placeholderTextColor="#bbb"
+                                                        keyboardType="numeric"
+                                                        maxLength={3}
+                                                        value={this.state.timerEdicaoModo}
+                                                        onChangeText={(t) => this.setState({ timerEdicaoModo: t })}
+                                                    />
+                                                    <Text style={{ color: '#888', fontSize: 12 }}>minutos (opcional)</Text>
+                                                </View>
+                                                <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 4 }}>
+                                                    <Pressable onPress={this.salvarEdicaoModo} style={{ marginLeft: 10 }}>
+                                                        <AntDesign name="check-circle" size={22} color="#4CAF50" />
+                                                    </Pressable>
+                                                    <Pressable onPress={() => this.setState({ indexEdicaoModo: null })} style={{ marginLeft: 10 }}>
+                                                        <AntDesign name="close-circle" size={22} color="#999" />
+                                                    </Pressable>
+                                                </View>
                                             </View>
                                         ) : (
-                                            <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
-                                                <Text style={{color: '#333', flex: 1}}>{index + 1}. {item}</Text>
-                                                <View style={{flexDirection: 'row', alignItems: 'center', gap: 15}}>
+                                            /* ── Exibição do passo ── */
+                                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                <View style={{ flex: 1 }}>
+                                                    <Text style={{ color: '#333' }}>{index + 1}. {passo.texto}</Text>
+                                                    {passo.timerMinutos !== null && (
+                                                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 4 }}>
+                                                            <AntDesign name="clock-circle" size={12} color="#FF9D4D" />
+                                                            <Text style={{ color: '#FF9D4D', fontSize: 12, fontWeight: 'bold' }}>
+                                                                {passo.timerMinutos} min
+                                                            </Text>
+                                                        </View>
+                                                    )}
+                                                </View>
+                                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15, marginLeft: 10 }}>
                                                     <Pressable onPress={() => this.iniciarEdicaoModo(index)}>
                                                         <AntDesign name="edit" size={18} color="#007AFF" />
                                                     </Pressable>
@@ -562,25 +613,42 @@ export default class NovaReceita extends Component<Props, State> {
                                     </View>
                                 ))}
 
+                                {/* ── Formulário de novo passo ── */}
                                 {this.state.isAddingModo ? (
-                                    <View style={{flexDirection: 'row', alignItems: 'center', marginTop: 5}}>
-                                        <TextInput 
-                                            style={{flex: 1, backgroundColor: '#fff', padding: 8, borderRadius: 5, borderWidth: 1, borderColor: '#eee'}} 
+                                    <View style={{ gap: 6, marginTop: 5 }}>
+                                        <TextInput
+                                            style={{ backgroundColor: '#fff', padding: 8, borderRadius: 5, borderWidth: 1, borderColor: '#eee' }}
                                             placeholder={`Passo ${this.state.modoPreparo.length + 1}...`}
                                             value={this.state.novoModo}
                                             onChangeText={(t) => this.setState({ novoModo: t })}
                                             autoFocus multiline
                                         />
-                                        <Pressable onPress={this.salvarModo} style={{marginLeft: 10}}>
-                                            <AntDesign name="check-circle" size={24} color="#4CAF50" />
-                                        </Pressable>
-                                        <Pressable onPress={() => this.setState({ isAddingModo: false, novoModo: '' })} style={{marginLeft: 10}}>
-                                            <AntDesign name="close-circle" size={24} color="#F44336" />
-                                        </Pressable>
+                                        {/* Campo de timer */}
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                            <AntDesign name="clock-circle" size={14} color="#FF9D4D" />
+                                            <TextInput
+                                                style={{ width: 70, backgroundColor: '#fff', padding: 6, borderRadius: 5, borderWidth: 1, borderColor: '#eee', textAlign: 'center' }}
+                                                placeholder="min"
+                                                placeholderTextColor="#bbb"
+                                                keyboardType="numeric"
+                                                maxLength={3}
+                                                value={this.state.novoModoTimer}
+                                                onChangeText={(t) => this.setState({ novoModoTimer: t })}
+                                            />
+                                            <Text style={{ color: '#888', fontSize: 12 }}>minutos (opcional)</Text>
+                                        </View>
+                                        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 10 }}>
+                                            <Pressable onPress={this.salvarModo} style={{ marginLeft: 10 }}>
+                                                <AntDesign name="check-circle" size={24} color="#4CAF50" />
+                                            </Pressable>
+                                            <Pressable onPress={() => this.setState({ isAddingModo: false, novoModo: '', novoModoTimer: '' })} style={{ marginLeft: 10 }}>
+                                                <AntDesign name="close-circle" size={24} color="#F44336" />
+                                            </Pressable>
+                                        </View>
                                     </View>
                                 ) : (
-                                    <Pressable onPress={() => this.setState({ isAddingModo: true })} style={{alignItems: 'center', marginTop: 5, paddingVertical: 10}}>
-                                        <Text style={{color: '#FF9D4D', fontWeight: 'bold'}}>+ Adicionar Passo</Text>
+                                    <Pressable onPress={() => this.setState({ isAddingModo: true })} style={{ alignItems: 'center', marginTop: 5, paddingVertical: 10 }}>
+                                        <Text style={{ color: '#FF9D4D', fontWeight: 'bold' }}>+ Adicionar Passo</Text>
                                     </Pressable>
                                 )}
                             </View>
@@ -590,7 +658,6 @@ export default class NovaReceita extends Component<Props, State> {
                             <Pressable style={[style.modalBotao, style.modalBotaoCancelar]} onPress={this.props.onClose}>
                                 <Text style={style.modalTextoBotao}>Cancelar</Text>
                             </Pressable>
-
                             <Pressable style={[style.modalBotao, style.modalBotaoSalvar]} onPress={this.salvarReceita}>
                                 <Text style={style.modalTextoBotao}>Salvar</Text>
                             </Pressable>
@@ -598,6 +665,6 @@ export default class NovaReceita extends Component<Props, State> {
                     </View>
                 </View>
             </Modal>
-        )
+        );
     }
 }

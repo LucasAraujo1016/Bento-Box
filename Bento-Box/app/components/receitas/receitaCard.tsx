@@ -1,6 +1,9 @@
 import React from 'react';
 import { View, Text, Image, Pressable, StyleSheet } from 'react-native';
 
+/** Um passo do modo de preparo pode ser string (receitas antigas) ou objeto com timer */
+export type PassoPreparo = string | { texto: string; timerMinutos: number | null };
+
 export interface ReceitaItem {
     _id?: string;
     id?: string;
@@ -14,7 +17,7 @@ export interface ReceitaItem {
     tipoCulinaria: string;
     restricoes?: string[];
     ingredientes?: { nome: string; quantidade: string }[];
-    modoPreparo?: string[];
+    modoPreparo?: PassoPreparo[];
 }
 
 interface Props {
@@ -34,7 +37,7 @@ export default function ReceitaCard({ receita, onPress }: Props) {
                     <Text style={styles.textoPlaceholder}>Sem Imagem</Text>
                 </View>
             )}
-            
+
             <View style={styles.info}>
                 <Text style={styles.titulo} numberOfLines={2}>{receita.nome}</Text>
                 <Text style={styles.tags} numberOfLines={1}>{receita.tipoCulinaria}</Text>
