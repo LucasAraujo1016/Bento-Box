@@ -1,7 +1,14 @@
 import mongoose, { ConnectOptions } from 'mongoose';
+import dotenv from 'dotenv';
+dotenv.config();
 
-const MONGODB_URI = "mongodb+srv://estudo:fatec123@bento-box.ohxbvjy.mongodb.net/?appName=bento-box";
-const clientOptions: ConnectOptions = { 
+const MONGODB_URI = process.env.MONGODB_URI as string;
+
+if (!MONGODB_URI) {
+  throw new Error('Variável MONGODB_URI não definida');
+}
+
+const clientOptions: ConnectOptions = {
   serverApi: { version: '1', strict: true, deprecationErrors: true },
   maxPoolSize: 10,
 };
@@ -12,25 +19,22 @@ if (!cached) {
 }
 
 export async function connectToMongoDB() {
-  if (cached.conn) {
-    return cached.conn;
-  }
+  if (cached.conn) return cached.conn;
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI, clientOptions).then(async (mongooseInstance) => {
-      if (mongooseInstance.connection.db) {
-          await mongooseInstance.connection.db.admin().command({ ping: 1 });
-          console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    cached.promise = mongoose.connect(MONGODB_URI, clientOptions).then(async (m) => {
+      if (m.connection.db) {
+        await m.connection.db.admin().command({ ping: 1 });
+        console.log('✅ Conectado ao MongoDB!');
       }
-      return mongooseInstance;
+      return m;
     });
   }
-  
+
   try {
     cached.conn = await cached.promise;
   } catch (e) {
     cached.promise = null;
-    console.error('Erro ao conectar no MongoDB', e);
     throw e;
   }
 
