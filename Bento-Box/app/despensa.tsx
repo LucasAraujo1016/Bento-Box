@@ -4,15 +4,17 @@ import FooterCustomizado from './components/footer';
 import HeaderCustomizado from './components/header';
 import CabecalhoSecao from './components/cabecalhoSecao';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
-import AsyncStorage from '@react-native-async-storage/async-storage'; 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import styleGeral from './styleSheet';
+import ScannerCodigoBarras from './components/scanerCodigoBarras';
 
 interface DespensaState {
     usuarioId: string;
     itens: { _id: string; nomeItem: string; quantidade: number }[];
     novoItemTexto: string;
     novoItemQtd: number;
-    textoBusca: string; // Novo estado para busca
+    textoBusca: string;
+    scannerVisivel: boolean; // ← novo
 }
 
 export default class Despensa extends Component<any, DespensaState> {
@@ -23,7 +25,8 @@ export default class Despensa extends Component<any, DespensaState> {
             itens: [],
             novoItemTexto: "",
             novoItemQtd: 1,
-            textoBusca: ""
+            textoBusca: "",
+            scannerVisivel: false, // ← novo
         };
     }
 
@@ -61,16 +64,15 @@ export default class Despensa extends Component<any, DespensaState> {
 
             if (resp.ok) {
                 const itemDeRetorno = await resp.json();
-                
+
                 this.setState(prevState => {
-                    // Verifica se o item retornado já existia localmente para atualizar
                     const indexExistente = prevState.itens.findIndex(i => i._id === itemDeRetorno._id);
                     let novosItens = [...prevState.itens];
 
                     if (indexExistente !== -1) {
-                        novosItens[indexExistente] = itemDeRetorno; // Atualiza o existente somado
+                        novosItens[indexExistente] = itemDeRetorno;
                     } else {
-                        novosItens.push(itemDeRetorno); // Adiciona o novo
+                        novosItens.push(itemDeRetorno);
                     }
 
                     return {
@@ -85,8 +87,72 @@ export default class Despensa extends Component<any, DespensaState> {
         }
     }
 
+    // ─── Novo: chamado pelo scanner quando o produto é identificado ─────────────
+    handleProdutoEscaneado = async (produto: {
+        nomeCompleto: string;
+        nomeGenerico: string;
+        codigoBarras: string;
+    }) => {
+        const { usuarioId } = this.state;
+
+        // Usa o nomeGenerico como nomeItem para que coincida com a lista de compras
+        // (ex: diferentes marcas de manteiga → todas viram "Manteiga")
+        const nomeParaDesepensa = produto.nomeGenerico;
+
+        Alert.alert(
+            'Produto identificado',
+            `"${produto.nomeCompleto}" será adicionado à despensa como:\n\n🏷️ ${nomeParaDesepensa}\n\nContinuar?`,
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                    text: 'Confirmar',
+                    onPress: async () => {
+                        try {
+                            const resp = await fetch(`http://localhost:3000/api/despensa`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    usuarioId,
+                                    nomeItem: nomeParaDesepensa,
+                                    quantidade: 1,
+                                }),
+                            });
+
+                            if (resp.ok) {
+                                const itemDeRetorno = await resp.json();
+
+                                this.setState(prevState => {
+                                    const indexExistente = prevState.itens.findIndex(
+                                        i => i._id === itemDeRetorno._id
+                                    );
+                                    const novosItens = [...prevState.itens];
+
+                                    if (indexExistente !== -1) {
+                                        novosItens[indexExistente] = itemDeRetorno;
+                                        Alert.alert(
+                                            '✓ Quantidade atualizada',
+                                            `${nomeParaDesepensa}: ${itemDeRetorno.quantidade} unidade(s) na despensa`
+                                        );
+                                    } else {
+                                        novosItens.push(itemDeRetorno);
+                                        Alert.alert('✓ Adicionado', `${nomeParaDesepensa} foi adicionado à despensa!`);
+                                    }
+
+                                    return { itens: novosItens };
+                                });
+                            }
+                        } catch {
+                            Alert.alert('Erro', 'Não foi possível adicionar o item.');
+                        }
+                    },
+                },
+            ]
+        );
+    };
+    // ────────────────────────────────────────────────────────────────────────────
+
     atualizarQuantidade = async (itemId: string, novaQtd: number) => {
-        if (novaQtd < 0) return; // Agora pode chegar a 0
+        if (novaQtd < 0) return;
 
         try {
             const resp = await fetch(`http://localhost:3000/api/despensa/${itemId}`, {
@@ -108,8 +174,8 @@ export default class Despensa extends Component<any, DespensaState> {
     removerItem = async (itemId: string, nome: string) => {
         Alert.alert("Remover", `Tirar '${nome}' da sua despensa?`, [
             { text: "Cancelar", style: "cancel" },
-            { 
-                text: "Remover", 
+            {
+                text: "Remover",
                 style: "destructive",
                 onPress: async () => {
                     try {
@@ -129,54 +195,62 @@ export default class Despensa extends Component<any, DespensaState> {
 
     filtrarEOrdenarItens = () => {
         const { itens, textoBusca } = this.state;
-        
-        const normalizeString = (str: string) => 
+
+        const normalizeString = (str: string) =>
             str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
         const buscaNormalizada = normalizeString(textoBusca);
 
-        const itensFiltrados = itens.filter(item => {
-            return normalizeString(item.nomeItem).includes(buscaNormalizada);
-        });
+        const itensFiltrados = itens.filter(item =>
+            normalizeString(item.nomeItem).includes(buscaNormalizada)
+        );
 
-        return itensFiltrados.sort((a, b) => {
-            return normalizeString(a.nomeItem).localeCompare(normalizeString(b.nomeItem));
-        });
+        return itensFiltrados.sort((a, b) =>
+            normalizeString(a.nomeItem).localeCompare(normalizeString(b.nomeItem))
+        );
     }
 
     render() {
         const itensRenderizados = this.filtrarEOrdenarItens();
 
         return (
-            <View style={styleGeral.containerGeral}> 
+            <View style={styleGeral.containerGeral}>
                 <HeaderCustomizado />
 
+                {/* ── Scanner (modal fullscreen) ── */}
+                <ScannerCodigoBarras
+                    visivel={this.state.scannerVisivel}
+                    fechar={() => this.setState({ scannerVisivel: false })}
+                    onProdutoIdentificado={this.handleProdutoEscaneado}
+                />
+
                 <ScrollView contentContainerStyle={styleGeral.scrollContent} stickyHeaderIndices={[1]}>
-                    <CabecalhoSecao 
-                        titulo="Minha Despensa" 
-                        subtitulo="Controle os ingredientes que você tem em casa" 
-                        icone="box-open" 
-                        corIcone="#FF9D4D" 
+                    <CabecalhoSecao
+                        titulo="Minha Despensa"
+                        subtitulo="Controle os ingredientes que você tem em casa"
+                        icone="box-open"
+                        corIcone="#FF9D4D"
                     />
 
                     <View style={styles.topContainer}>
+                        {/* ── Linha de adição manual + botão scanner ── */}
                         <View style={styles.inputContainer}>
                             <View style={styles.addQuantidadeContainer}>
-                                <TouchableOpacity 
+                                <TouchableOpacity
                                     style={styles.botaoAjusteQtdBase}
                                     onPress={() => this.setState({ novoItemQtd: Math.max(0, this.state.novoItemQtd - 1) })}>
                                     <FontAwesome5 name="minus" size={12} color="#555" />
                                 </TouchableOpacity>
                                 <Text style={styles.textoQuantidade}>{this.state.novoItemQtd}</Text>
-                                <TouchableOpacity 
+                                <TouchableOpacity
                                     style={styles.botaoAjusteQtdBase}
                                     onPress={() => this.setState({ novoItemQtd: this.state.novoItemQtd + 1 })}>
                                     <FontAwesome5 name="plus" size={12} color="#555" />
                                 </TouchableOpacity>
                             </View>
-                            <TextInput 
-                                style={styles.input} 
-                                placeholder="Ex: Arroz; Feijão..." 
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Ex: Arroz; Feijão..."
                                 value={this.state.novoItemTexto}
                                 onChangeText={(text) => this.setState({ novoItemTexto: text })}
                                 onSubmitEditing={this.adicionarItem}
@@ -184,13 +258,21 @@ export default class Despensa extends Component<any, DespensaState> {
                             <TouchableOpacity style={styles.botaoAdicionar} onPress={this.adicionarItem}>
                                 <FontAwesome5 name="plus" size={16} color="#FFF" />
                             </TouchableOpacity>
+
+                            {/* ── Botão scanner (novo) ── */}
+                            <TouchableOpacity
+                                style={styles.botaoScanner}
+                                onPress={() => this.setState({ scannerVisivel: true })}
+                            >
+                                <FontAwesome5 name="barcode" size={18} color="#FFF" />
+                            </TouchableOpacity>
                         </View>
 
                         <View style={styles.buscaContainer}>
                             <FontAwesome5 name="search" size={16} color="#888" style={styles.iconeBusca} />
-                            <TextInput 
-                                style={styles.inputBusca} 
-                                placeholder="Pesquisar item..." 
+                            <TextInput
+                                style={styles.inputBusca}
+                                placeholder="Pesquisar item..."
                                 value={this.state.textoBusca}
                                 onChangeText={(text) => this.setState({ textoBusca: text })}
                             />
@@ -210,28 +292,28 @@ export default class Despensa extends Component<any, DespensaState> {
                         itensRenderizados.map(item => (
                             <View key={item._id} style={styles.itemRow}>
                                 <Text style={styles.itemNome}>{item.nomeItem}</Text>
-                                
+
                                 <View style={styles.controlesDireita}>
                                     <View style={styles.controleQuantidade}>
-                                        <TouchableOpacity 
+                                        <TouchableOpacity
                                             style={styles.botaoAjusteQtd}
-                                            onPress={() => this.atualizarQuantidade(item._id, (item.quantidade !== undefined ? item.quantidade : 1) - 1)}
+                                            onPress={() => this.atualizarQuantidade(item._id, (item.quantidade ?? 1) - 1)}
                                         >
                                             <FontAwesome5 name="minus" size={12} color="#555" />
                                         </TouchableOpacity>
-                                        
-                                        <Text style={styles.textoAtual}>{item.quantidade !== undefined ? item.quantidade : 1}</Text>
-                                        
-                                        <TouchableOpacity 
+
+                                        <Text style={styles.textoAtual}>{item.quantidade ?? 1}</Text>
+
+                                        <TouchableOpacity
                                             style={styles.botaoAjusteQtd}
-                                            onPress={() => this.atualizarQuantidade(item._id, (item.quantidade !== undefined ? item.quantidade : 1) + 1)}
+                                            onPress={() => this.atualizarQuantidade(item._id, (item.quantidade ?? 1) + 1)}
                                         >
                                             <FontAwesome5 name="plus" size={12} color="#555" />
                                         </TouchableOpacity>
                                     </View>
 
-                                    <TouchableOpacity 
-                                        style={styles.botaoDeletar} 
+                                    <TouchableOpacity
+                                        style={styles.botaoDeletar}
                                         onPress={() => this.removerItem(item._id, item.nomeItem)}
                                     >
                                         <FontAwesome5 name="trash-alt" size={16} color="#FF6B6B" />
@@ -259,6 +341,8 @@ const styles = StyleSheet.create({
     textoQuantidade: { marginHorizontal: 8, fontSize: 16, fontWeight: 'bold', width: 20, textAlign: 'center' },
     input: { flex: 1, borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, backgroundColor: '#fff', fontSize: 16 },
     botaoAdicionar: { backgroundColor: '#4CAF50', padding: 15, borderRadius: 8, marginLeft: 10, justifyContent: 'center', alignItems: 'center' },
+    // ← novo
+    botaoScanner: { backgroundColor: '#FF9D4D', padding: 15, borderRadius: 8, marginLeft: 8, justifyContent: 'center', alignItems: 'center' },
     itemRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', padding: 15, borderRadius: 8, marginBottom: 10, elevation: 1 },
     itemNome: { fontSize: 16, color: '#333', fontWeight: '500', flex: 1 },
     controlesDireita: { flexDirection: 'row', alignItems: 'center' },

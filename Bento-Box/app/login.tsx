@@ -61,7 +61,7 @@ export default class Login extends Component {
             const credenciais = await autenticarComDigital();
             if (!credenciais) return;
             await this.fazerRequisicaoLogin(credenciais.email, credenciais.senha);
-        } catch (e) {
+        } catch {
             Alert.alert("Erro", "Não foi possível autenticar com a digital.");
         } finally {
             this.setState({ carregando: false });
@@ -111,7 +111,7 @@ export default class Login extends Component {
                     [{ text: "Entendi" }]
                 );
             }, 800);
-        } catch (e) {
+        } catch {
             // Silencioso — não bloqueia o login
         }
     };
