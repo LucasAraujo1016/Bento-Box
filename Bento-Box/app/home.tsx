@@ -5,13 +5,14 @@ import HeaderCustomizado from "./components/header";
 import FooterCustomizado from "./components/footer";
 import { ReceitaItem } from "./components/receitas/receitaCard";
 import ExibirReceita from "./components/receitas/exibirReceita";
+import TutorialCard from "./components/tutorialCard"; // ← novo
 import style from "./styleSheet";
 
 interface State {
     receitaDoDia: ReceitaItem | null;
     modalExibirVisivel: boolean;
     carregando: boolean;
-    dicaDoDia: DicaItem | null; 
+    dicaDoDia: DicaItem | null;
 }
 
 interface DicaItem {
@@ -38,14 +39,12 @@ export default class Home extends Component<any, State> {
             const resposta = await fetch('http://localhost:3000/api/receitas');
             if (resposta.ok) {
                 const receitas: ReceitaItem[] = await resposta.json();
-                
+
                 if (receitas.length > 0) {
                     const hoje = new Date();
-                    const fusoAjuste = hoje.getTimezoneOffset() * 60000; 
+                    const fusoAjuste = hoje.getTimezoneOffset() * 60000;
                     const diasPassados = Math.floor((hoje.getTime() - fusoAjuste) / (1000 * 60 * 60 * 24));
-                    
                     const indexDoDia = diasPassados % receitas.length;
-                    
                     this.setState({ receitaDoDia: receitas[indexDoDia], carregando: false });
                 } else {
                     this.setState({ carregando: false });
@@ -62,14 +61,12 @@ export default class Home extends Component<any, State> {
             const resposta = await fetch('http://localhost:3000/api/dicas');
             if (resposta.ok) {
                 const dicas: DicaItem[] = await resposta.json();
-                
+
                 if (dicas.length > 0) {
                     const hoje = new Date();
-                    const fusoAjuste = hoje.getTimezoneOffset() * 60000; 
+                    const fusoAjuste = hoje.getTimezoneOffset() * 60000;
                     const diasPassados = Math.floor((hoje.getTime() - fusoAjuste) / (1000 * 60 * 60 * 24));
-                    
                     const indexDoDia = diasPassados % dicas.length;
-                    
                     this.setState({ dicaDoDia: dicas[indexDoDia] });
                 }
             }
@@ -88,11 +85,12 @@ export default class Home extends Component<any, State> {
         const { receitaDoDia, carregando, dicaDoDia } = this.state;
 
         return (
-            <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}> 
+            <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
                 <HeaderCustomizado />
-                
+
                 <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 20 }}>
-                    
+
+                    {/* ── Receita do Dia ── */}
                     {carregando ? (
                         <View style={{ marginTop: 50 }}>
                             <ActivityIndicator size="large" color="#FF9D4D" />
@@ -113,7 +111,7 @@ export default class Home extends Component<any, State> {
                                 <Image source={{ uri: receitaDoDia.imagem }} style={style.destaqueImagem} />
                             ) : (
                                 <View style={[style.destaqueImagem, style.placeholder]}>
-                                    <Text style={{color: '#a0a0a0'}}>Sem Imagem</Text>
+                                    <Text style={{ color: '#a0a0a0' }}>Sem Imagem</Text>
                                 </View>
                             )}
                             <View style={style.destaqueInfo}>
@@ -132,6 +130,7 @@ export default class Home extends Component<any, State> {
                         </Text>
                     )}
 
+                    {/* ── Dica do Dia ── */}
                     {dicaDoDia ? (
                         <View style={style.dicaCard}>
                             <View style={style.headerInterno}>
@@ -149,25 +148,8 @@ export default class Home extends Component<any, State> {
                         <ActivityIndicator size="small" color="#FF9D4D" style={{ marginTop: 20 }} />
                     )}
 
-                    <Pressable style={style.quizCard}>
-                        <View style={style.headerInterno}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <FontAwesome5 name="brain" size={18} color="#FF9D4D" style={{ marginRight: 8 }} />
-                                <Text style={style.headerInternoTitulo}>Teste seus Conhecimentos</Text>
-                            </View>
-                            <Text style={style.headerInternoSub}>Descubra o quanto você sabe sobre culinária!</Text>
-                        </View>
-
-                        <View style={style.quizInnerRow}>
-                            <View style={style.quizConteudo}>
-                                <Text style={style.quizTitulo}>Quiz Gastronômico</Text>
-                                <Text style={style.quizTexto}>Teste suas habilidades e aprenda curiosidades respondendo perguntas rápidas.</Text>
-                            </View>
-                            <View style={style.quizEmBreveBadge}>
-                                <Text style={style.quizEmBreveTexto}>EM BREVE</Text>
-                            </View>
-                        </View>
-                    </Pressable>
+                    {/* ── Tutorial (substitui o Quiz) ── */}
+                    <TutorialCard />
 
                 </ScrollView>
 
@@ -180,9 +162,9 @@ export default class Home extends Component<any, State> {
                     isFavorito={false}
                     isFeita={false}
                 />
-                
+
                 <FooterCustomizado />
             </View>
-        )
+        );
     }
 }
