@@ -14,6 +14,7 @@ import ModalSalvarPlano from './components/planejamento/modalSalvarPlano';
 import ModalMeusPlanos from './components/planejamento/modalMeusPlanos';
 import ModalOpcoesDia from './components/planejamento/modalOpcoesDia';
 import ModalListaCompras from './components/planejamento/modalListaCompras';
+import { API_BASE_URL } from './constants/api';
 
 interface PlanejamentoState {
     cardapio: { [key: string]: ReceitaItem[] };
@@ -82,7 +83,7 @@ export default class PlanejamentoSemanal extends Component<any, PlanejamentoStat
 
     carregarPlanosDoBanco = async () => {
         try {
-            const resp = await fetch(`http://localhost:3000/api/planejamento/lista?userId=${this.state.usuarioId}`);
+            const resp = await fetch(`${API_BASE_URL}/api/planejamento/lista?userId=${this.state.usuarioId}`);
             if (resp.ok) {
                 const planos = await resp.json();
                 this.setState({ planosSalvos: planos });
@@ -141,7 +142,7 @@ export default class PlanejamentoSemanal extends Component<any, PlanejamentoStat
     salvarPlanoConcluido = async () => {
         const { planoAtualId, nomeTemporario, cardapio, usuarioId } = this.state;
         const isNovo = !planoAtualId;
-        const url = isNovo ? `http://localhost:3000/api/planejamento` : `http://localhost:3000/api/planejamento/${planoAtualId}`;
+        const url = isNovo ? `${API_BASE_URL}/api/planejamento` : `${API_BASE_URL}/api/planejamento/${planoAtualId}`;
         const method = isNovo ? 'POST' : 'PUT';
 
         try {
@@ -176,7 +177,7 @@ export default class PlanejamentoSemanal extends Component<any, PlanejamentoStat
             { text: "Cancelar", style: "cancel" },
             { text: "Excluir", style: "destructive", onPress: async () => {
                 try {
-                    await fetch(`http://localhost:3000/api/planejamento/${id}`, { method: 'DELETE' });
+                    await fetch(`${API_BASE_URL}/api/planejamento/${id}`, { method: 'DELETE' });
                     
                     if (this.state.planoAtualId === id) {
                         const vazio: any = {};
@@ -194,7 +195,7 @@ export default class PlanejamentoSemanal extends Component<any, PlanejamentoStat
 
     buscarFavoritosDoBanco = async () => {
         try {
-            const resposta = await fetch(`http://localhost:3000/api/favoritos/${this.state.usuarioId}`);
+            const resposta = await fetch(`${API_BASE_URL}/api/favoritos/${this.state.usuarioId}`);
             if (resposta.ok) {
                 const dados = await resposta.json();
                 this.setState({ idsFavoritos: dados.map((i: any) => i._id || i.id) });
@@ -204,7 +205,7 @@ export default class PlanejamentoSemanal extends Component<any, PlanejamentoStat
 
     buscarHistoricoDoBanco = async () => {
         try {
-            const resposta = await fetch(`http://localhost:3000/api/historico/${this.state.usuarioId}`);
+            const resposta = await fetch(`${API_BASE_URL}/api/historico/${this.state.usuarioId}`);
             if (resposta.ok) {
                 const dados = await resposta.json();
                 this.setState({ idsHistorico: dados.map((i: any) => i._id || i.id) });
@@ -215,7 +216,7 @@ export default class PlanejamentoSemanal extends Component<any, PlanejamentoStat
     gerarCardapioInteligente = async () => {
         try {
             if (!this.state.usuarioId) return;
-            const response = await fetch(`http://localhost:3000/api/planejamento/gerar?userId=${this.state.usuarioId}`);
+            const response = await fetch(`${API_BASE_URL}/api/planejamento/gerar?userId=${this.state.usuarioId}`);
             if (response.ok) {
                 const cardapioGerado = await response.json();
                 const novoCardapio = { ...this.state.cardapio, ...cardapioGerado };
@@ -239,13 +240,13 @@ export default class PlanejamentoSemanal extends Component<any, PlanejamentoStat
     toggleFavorito = async (rec: ReceitaItem) => {
         const id = rec._id || rec.id;
         this.setState(p => ({ idsFavoritos: p.idsFavoritos.includes(id as string) ? p.idsFavoritos.filter(i => i !== id) : [...p.idsFavoritos, id as string] }));
-        try { await fetch('http://localhost:3000/api/favoritos/toggle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuarioId: this.state.usuarioId, receitaId: id }) }); } catch {}
+        try { await fetch(`${API_BASE_URL}/api/favoritos/toggle`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuarioId: this.state.usuarioId, receitaId: id }) }); } catch {}
     }
 
     marcarReceitaFeita = async (rec: ReceitaItem) => {
         const id = rec._id || rec.id;
         this.setState(p => ({ idsHistorico: p.idsHistorico.includes(id as string) ? p.idsHistorico.filter(i => i !== id) : [...p.idsHistorico, id as string] }));
-        try { await fetch('http://localhost:3000/api/historico/toggle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuarioId: this.state.usuarioId, receitaId: id }) }); } catch {}
+        try { await fetch(`${API_BASE_URL}/api/historico/toggle`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuarioId: this.state.usuarioId, receitaId: id }) }); } catch {}
     }
 
     removerRefeicao = (dia: string, index: number) => {
@@ -262,7 +263,7 @@ export default class PlanejamentoSemanal extends Component<any, PlanejamentoStat
     abrirModalAdicionar = async (dia: string) => {
         try {
             this.setState({ diaParaAdicionar: dia, modalReceitasVisivel: true, sugestoes: [] });
-            const response = await fetch(`http://localhost:3000/api/planejamento/sugestoes?userId=${this.state.usuarioId}`);
+            const response = await fetch(`${API_BASE_URL}/api/planejamento/sugestoes?userId=${this.state.usuarioId}`);
             if (response.ok) this.setState({ sugestoes: await response.json() });
         } catch {
             Alert.alert("Erro", "Falha nas sugestões.");
@@ -355,7 +356,7 @@ export default class PlanejamentoSemanal extends Component<any, PlanejamentoStat
         this.setState({ listaCompras: novaLista });
         
         try {
-            const resp = await fetch(`http://localhost:3000/api/despensa/${this.state.usuarioId}`);
+            const resp = await fetch(`${API_BASE_URL}/api/despensa/${this.state.usuarioId}`);
             if (resp.ok) {
                 const itensDespensa = await resp.json();
                 
@@ -379,7 +380,7 @@ export default class PlanejamentoSemanal extends Component<any, PlanejamentoStat
 
     adicionarParaDespensa = async (nomeItem: string, quantidadeUsuario: number = 1) => {
         try {
-            const resp = await fetch(`http://localhost:3000/api/despensa`, {
+            const resp = await fetch(`${API_BASE_URL}/api/despensa`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 

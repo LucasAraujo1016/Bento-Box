@@ -7,6 +7,7 @@ import { ReceitaItem } from "./components/receitas/receitaCard";
 import ExibirReceita from "./components/receitas/exibirReceita";
 import TutorialCard from "./components/tutorialCard"; // ← novo
 import style from "./styleSheet";
+import { API_BASE_URL } from "./constants/api";
 
 interface State {
     receitaDoDia: ReceitaItem | null;
@@ -36,7 +37,7 @@ export default class Home extends Component<any, State> {
 
     buscarReceitaDoDia = async () => {
         try {
-            const resposta = await fetch('http://localhost:3000/api/receitas');
+            const resposta = await fetch(`${API_BASE_URL}/api/receitas`);
             if (resposta.ok) {
                 const receitas: ReceitaItem[] = await resposta.json();
 
@@ -58,7 +59,7 @@ export default class Home extends Component<any, State> {
 
     buscarDicaDoDia = async () => {
         try {
-            const resposta = await fetch('http://localhost:3000/api/dicas');
+            const resposta = await fetch(`${API_BASE_URL}/api/dicas`);
             if (resposta.ok) {
                 const dicas: DicaItem[] = await resposta.json();
 

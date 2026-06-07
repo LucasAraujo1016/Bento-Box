@@ -10,6 +10,7 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 import style from "./styleSheet";
 import ReceitaCard, { ReceitaItem } from "./components/receitas/receitaCard";
 import ExibirReceita from "./components/receitas/exibirReceita";
+import { API_BASE_URL } from "./constants/api";
 
 interface State {
     modalVisivel: boolean;
@@ -62,7 +63,7 @@ export default class Receitas extends Component<any, State> {
 
     buscarReceitasDoBanco = async () => {
         try {
-            const resposta = await fetch('http://localhost:3000/api/receitas');
+            const resposta = await fetch(`${API_BASE_URL}/api/receitas`);
             if (resposta.ok) {
                 const dadosBanco = await resposta.json();
                 this.setState({ receitasOriginais: dadosBanco }, () => {
@@ -76,7 +77,7 @@ export default class Receitas extends Component<any, State> {
 
     buscarFavoritosDoBanco = async () => {
         try {
-            const resposta = await fetch(`http://localhost:3000/api/favoritos/${this.state.usuarioId}`);
+            const resposta = await fetch(`${API_BASE_URL}/api/favoritos/${this.state.usuarioId}`);
             if (resposta.ok) {
                 const dados = await resposta.json();
                 const ids = dados.map((item: any) => item._id || item.id).filter((id: any) => id !== undefined);
@@ -89,7 +90,7 @@ export default class Receitas extends Component<any, State> {
 
     buscarHistoricoDoBanco = async () => {
         try {
-            const resposta = await fetch(`http://localhost:3000/api/historico/${this.state.usuarioId}`);
+            const resposta = await fetch(`${API_BASE_URL}/api/historico/${this.state.usuarioId}`);
             if (resposta.ok) {
                 const dados = await resposta.json();
                 const ids = dados.map((item: any) => item._id || item.id).filter((id: any) => id !== undefined);
@@ -168,7 +169,7 @@ export default class Receitas extends Component<any, State> {
             return { idsFavoritos: jaFavorito ? prev.idsFavoritos.filter(i => i !== id) : [...prev.idsFavoritos, id] };
         });
         try {
-            await fetch('http://localhost:3000/api/favoritos/toggle', {
+            await fetch(`${API_BASE_URL}/api/favoritos/toggle`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ usuarioId: this.state.usuarioId, receitaId: id })
@@ -186,7 +187,7 @@ export default class Receitas extends Component<any, State> {
             return { idsHistorico: jaFeita ? prev.idsHistorico.filter(i => i !== id) : [...prev.idsHistorico, id] };
         });
         try {
-            await fetch('http://localhost:3000/api/historico/toggle', {
+            await fetch(`${API_BASE_URL}/api/historico/toggle`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ usuarioId: this.state.usuarioId, receitaId: id })

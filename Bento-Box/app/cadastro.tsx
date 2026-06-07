@@ -3,6 +3,7 @@ import { Text, TextInput, View, Pressable, ScrollView, Alert, KeyboardAvoidingVi
 import { Picker } from '@react-native-picker/picker';
 import style from "./styleSheet";
 import { router } from "expo-router";
+import { API_BASE_URL } from "./constants/api";
 
 interface State {
     nomeUsuario: string; 
@@ -49,11 +50,8 @@ export default class cadastro extends Component<any, State> {
 
         this.setState({ carregando: true });
 
-        try {
-            const baseUrl = "http://localhost:3000";
-            const urlDaSuaAPI = `${baseUrl}/api/cadastro`;  
-            
-            const resposta = await fetch(urlDaSuaAPI, {
+        try {            
+            const resposta = await fetch(`${API_BASE_URL}/api/cadastro`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

@@ -48,7 +48,7 @@ function TimerPasso({ timerId, receitaNome, indicePasso, timerMinutos }: TimerPa
     const corTimer = (): string => {
         if (!entrada) return '#FF9D4D';
         if (entrada.finalizado) return '#E53935';
-        if (entrada.segundosRestantes <= 30) return '#FF9D4D';
+        if (entrada.segundosRestantes <= 30) return '#FF9D4D';  
         return '#4CAF50';
     };
 

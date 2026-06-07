@@ -4,6 +4,7 @@ import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import style from "../../styleSheet";
+import { API_BASE_URL } from "@/app/constants/api";
 
 interface Props {
     visible: boolean;
@@ -320,7 +321,7 @@ export default class NovaReceita extends Component<Props, State> {
         };
 
         try {
-            const resposta = await fetch("http://localhost:3000/api/receitas", {
+            const resposta = await fetch(`${API_BASE_URL}/api/receitas`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(receitaNova)

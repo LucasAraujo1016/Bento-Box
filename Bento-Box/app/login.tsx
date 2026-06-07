@@ -9,6 +9,7 @@ import {
     autenticarComDigital,
     hardwareSuportado,
 } from './services/biometriaService';
+import { API_BASE_URL } from "./constants/api";
 
 export default class Login extends Component {
     state = {
@@ -71,7 +72,7 @@ export default class Login extends Component {
     // ─── Lógica central de login ───────────────────────────────────────────────
     fazerRequisicaoLogin = async (email: string, senha: string): Promise<boolean> => {
         try {
-            const resposta = await fetch("http://localhost:3000/api/login", {
+            const resposta = await fetch(`${API_BASE_URL}/api/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, senha }),

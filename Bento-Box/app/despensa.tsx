@@ -7,6 +7,7 @@ import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import styleGeral from './styleSheet';
 import ScannerCodigoBarras from './components/scanerCodigoBarras';
+import { API_BASE_URL } from './constants/api';
 
 interface DespensaState {
     usuarioId: string;
@@ -41,7 +42,7 @@ export default class Despensa extends Component<any, DespensaState> {
 
     carregarDespensa = async () => {
         try {
-            const resp = await fetch(`http://localhost:3000/api/despensa/${this.state.usuarioId}`);
+            const resp = await fetch(`${API_BASE_URL}/api/despensa/${this.state.usuarioId}`);
             if (resp.ok) {
                 const dados = await resp.json();
                 this.setState({ itens: dados });
@@ -56,7 +57,7 @@ export default class Despensa extends Component<any, DespensaState> {
         if (!novoItemTexto.trim()) return;
 
         try {
-            const resp = await fetch(`http://localhost:3000/api/despensa`, {
+            const resp = await fetch(`${API_BASE_URL}/api/despensa`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ usuarioId, nomeItem: novoItemTexto, quantidade: novoItemQtd })
@@ -108,7 +109,7 @@ export default class Despensa extends Component<any, DespensaState> {
                     text: 'Confirmar',
                     onPress: async () => {
                         try {
-                            const resp = await fetch(`http://localhost:3000/api/despensa`, {
+                            const resp = await fetch(`${API_BASE_URL}/api/despensa`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
@@ -155,7 +156,7 @@ export default class Despensa extends Component<any, DespensaState> {
         if (novaQtd < 0) return;
 
         try {
-            const resp = await fetch(`http://localhost:3000/api/despensa/${itemId}`, {
+            const resp = await fetch(`${API_BASE_URL}/api/despensa/${itemId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ quantidade: novaQtd })
@@ -179,7 +180,7 @@ export default class Despensa extends Component<any, DespensaState> {
                 style: "destructive",
                 onPress: async () => {
                     try {
-                        const resp = await fetch(`http://localhost:3000/api/despensa/${itemId}`, { method: 'DELETE' });
+                        const resp = await fetch(`${API_BASE_URL}/api/despensa/${itemId}`, { method: 'DELETE' });
                         if (resp.ok) {
                             this.setState(prevState => ({
                                 itens: prevState.itens.filter(i => i._id !== itemId)

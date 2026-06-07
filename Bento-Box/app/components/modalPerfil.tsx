@@ -8,6 +8,7 @@ import {
     ativarBiometria,
     desativarBiometria,
 } from '../services/biometriaService';
+import { API_BASE_URL } from '../constants/api';
 
 interface ModalPerfilProps {
     visible: boolean;
@@ -115,8 +116,8 @@ export default function ModalPerfil({ visible, onClose }: ModalPerfilProps) {
             if (!uid) return;
             setUsuarioId(uid);
 
-            const respostaPerfil = fetch(`http://localhost:3000/api/perfil/${uid}`);
-            const respostaReceitasCount = fetch(`http://localhost:3000/api/receitas/autor/${uid}/count`);
+            const respostaPerfil = fetch(`${API_BASE_URL}/api/perfil/${uid}`);
+            const respostaReceitasCount = fetch(`${API_BASE_URL}/api/receitas/autor/${uid}/count`);
 
             const [resPerfil, resCount] = await Promise.all([respostaPerfil, respostaReceitasCount]);
 
@@ -143,7 +144,7 @@ export default function ModalPerfil({ visible, onClose }: ModalPerfilProps) {
     const salvarCampoUnico = async (novoCampo: any) => {
         if (!usuarioId) return;
         try {
-            const resposta = await fetch(`http://localhost:3000/api/perfil/${usuarioId}`, {
+            const resposta = await fetch(`${API_BASE_URL}/api/perfil/${usuarioId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
