@@ -8,7 +8,7 @@ import {
     biometriaEstaAtiva,
     autenticarComDigital,
     hardwareSuportado,
-} from '../api/biometriaService';
+} from './services/biometriaService';
 
 export default class Login extends Component {
     state = {

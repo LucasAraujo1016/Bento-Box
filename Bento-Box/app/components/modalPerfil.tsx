@@ -7,7 +7,7 @@ import {
     biometriaEstaAtiva,
     ativarBiometria,
     desativarBiometria,
-} from '../../api/biometriaService';
+} from '../services/biometriaService';
 
 interface ModalPerfilProps {
     visible: boolean;
